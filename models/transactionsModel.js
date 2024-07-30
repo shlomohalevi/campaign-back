@@ -10,13 +10,13 @@ const transactionSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Date is required']
   },
-  Time: {
-    type: String,
-    required: [true, 'Time is required']
-  },
   OperationType: {
     type: String,
     required: [true, 'Operation Type is required']
+  },
+  Location: {
+    type: String,
+    required: [true, 'Location is required']
   },
   User: {
     type: mongoose.Schema.Types.ObjectId,
