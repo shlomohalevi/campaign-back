@@ -58,11 +58,11 @@ const peopleSchema = new mongoose.Schema({
       // required: [true, 'Studied in Yeshiva Years is required']
     },
     DonationMethod: {
-      type: String,enum: ['Cash', 'Check', 'CreditCard','BankTransfer'],
+      type: String
       // required: [true, 'Donation Method is required']
     },
     GradeAYear: {
-      type: String,
+      type: String
       // required: [true, 'Grade A Year is required']
     },
     GroupNumber: {
