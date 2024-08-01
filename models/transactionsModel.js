@@ -1,26 +1,26 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  TransactionNumber: {
+  TransactionId: {
     type: Number,
     required: [true, 'Transaction Number is required'],
     unique: true
   },
   Date: {
     type: Date,
-    required: [true, 'Date is required']
+    // required: [true, 'Date is required']
   },
   OperationType: {
-    type: String,
-    required: [true, 'Operation Type is required']
+    type: String,//enum?
+    // required: [true, 'Operation Type is required']
   },
   Location: {
     type: String,
-    required: [true, 'Location is required']
+    // required: [true, 'Location is required']
   },
   User: {
     type: mongoose.Schema.Types.ObjectId,
-    required: [true, 'User is required'],
+    // required: [true, 'User is required'],
     ref: 'Manager'
   }
 });
