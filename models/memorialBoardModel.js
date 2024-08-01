@@ -2,10 +2,11 @@ const mongoose = require('mongoose');
 
 const memorialBoardSchema = new mongoose.Schema({
   CustomerID: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     required: [true, 'Customer ID is required'],
     ref: 'People'
   },
+  //id 
   MemorialDay: {
     type: Date,
     required: [true, 'Memorial Day is required'],

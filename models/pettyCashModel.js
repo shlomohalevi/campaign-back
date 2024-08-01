@@ -1,18 +1,19 @@
 const mongoose = require('mongoose');
 
 const pettyCashSchema = new mongoose.Schema({
-  TransactionNumber: {
-    type: Number,
+  TransactionId: {
+    type: String,
     required: [true, 'Transaction Number is required'],
     unique: true
+    //ref to transactions
   },
-  TransactionType: {
+  TransactionType: {//enum?
     type: String,
-    required: [true, 'Transaction Type is required']
+    // required: [true, 'Transaction Type is required']
   },
   Amount: {
     type: Number,
-    required: [true, 'Amount is required']
+    // required: [true, 'Amount is required']
   },
   CustomerID: {
     type: mongoose.Schema.Types.ObjectId,

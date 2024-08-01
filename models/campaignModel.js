@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const campaignSchema = new mongoose.Schema({
   CampaignID: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     required: [true, 'CampaignID is required'],
     unique: true,
-    auto: true
   },
+  //idcampain 
   CampaignName: {
     type: String,
     required: [true, 'Campaign Name is required']
