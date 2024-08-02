@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
+const mongoose = require('mongoose');
 const cors = require('cors')
+const uploadsRouter = require('./Routes/uploadRouts')
 
 
 require('dotenv').config();
@@ -10,11 +12,11 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
-const mongoose = require('mongoose');
 
 // const globalErrorHandler = require('./utils/errorHandler')
 // const cookieParser = require('cookie-parser');
 app.use(express.json())
+app.use('/api/alfon', uploadsRouter);
 
 const port = 4000;
 app.listen(port, () => {

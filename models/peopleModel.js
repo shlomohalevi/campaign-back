@@ -1,8 +1,15 @@
 const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
+
 const peopleSchema = new mongoose.Schema({
-    PersonID: {//?automate number
+    PersonID: {
+      type: Number,
+      // required: [true, 'personID is required'],
+      // unique: true
+    },
+    anashIdentifier: {
       type: String,
-      required: [true, 'personID is required'],
+      required: [true, 'People Identifier is required'],
       unique: true
     },
     FirstName: {
@@ -71,8 +78,8 @@ const peopleSchema = new mongoose.Schema({
     },
     IdentityNumber: {
       type: String,
-      required: [true, 'Identity Number is required'],
-      unique: true
+      // required: [true, 'Identity Number is required'],
+      // unique: true
     },
     Classification: {
       type: String,
@@ -82,16 +89,12 @@ const peopleSchema = new mongoose.Schema({
       type: String,
       // required: [true, 'Beit Midrash is required']
     },
-    anashIdentifier: {
-      type: String,
-      // required: [true, 'People Identifier is required']
-    },
     PartyInviterName: {
       type: String,
       // required: [true, 'Party Inviter Name is required']
     },
     isActive: {
-      type: Boolean,
+      type: Number,
       // required: [true, 'Active/Inactive status is required'],
       // default: false
     },
@@ -121,6 +124,8 @@ const peopleSchema = new mongoose.Schema({
       // required: [true, 'Campaigns are required']
     }
     });
+    peopleSchema.plugin(AutoIncrement, { inc_field: 'PersonID', start_seq: 1 });
+
 
   const People = mongoose.model('People', peopleSchema);
 
