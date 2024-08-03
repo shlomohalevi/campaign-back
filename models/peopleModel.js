@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
+const { schema } = require('./transactionsModel');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const peopleSchema = new mongoose.Schema({
-    PersonID: {
-      type: Number,
-      // required: [true, 'personID is required'],
-      // unique: true
-    },
+  PersonID: {
+    type: Number,
+    // required: [true, 'Person ID is required'],
+    unique: true
+  },
     anashIdentifier: {
       type: String,
       required: [true, 'People Identifier is required'],
@@ -124,8 +125,10 @@ const peopleSchema = new mongoose.Schema({
       // required: [true, 'Campaigns are required']
     }
     });
-    peopleSchema.plugin(AutoIncrement, { inc_field: 'PersonID', start_seq: 1 });
+    peopleSchema.plugin(AutoIncrement, {inc_field: 'PersonID', startAt: 1, incrementBy: 1});
+    
 
+    // peopleSchema.plugin(AutoIncrement, { inc_field: 'personid' });
 
   const People = mongoose.model('People', peopleSchema);
 

@@ -12,7 +12,7 @@ const campaignSchema = new mongoose.Schema({
     required: [true, 'Campaign Name is required']
   }
 });
-
 const Campaign = mongoose.model('Campaign', campaignSchema);
+
 
 module.exports = Campaign;
