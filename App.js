@@ -33,7 +33,7 @@ app.listen(port, () => {
 
 const connectDB = async (url)=>{
   try{
-    await mongoose.connect(url)
+    await mongoose.connect(url);
     console.log(`Connected to database: ${mongoose.connection.name}`);
   }
   catch(err){
@@ -41,7 +41,7 @@ const connectDB = async (url)=>{
   }
   
 }
-connectDB(process.env.MONGO_ATLAS)
+connectDB(process.env.MONGO_COMPASS)
 .then(()=>{
   console.log("The data base has been connected");
 })
