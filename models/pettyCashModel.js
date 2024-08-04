@@ -7,15 +7,16 @@ const pettyCashSchema = new mongoose.Schema({
     unique: true
     //ref to transactions
   },
-  TransactionType: {//enum?
+  TransactionType: {
     type: String,
+    enum: ['Income', 'Expense']
     // required: [true, 'Transaction Type is required']
   },
   Amount: {
     type: Number,
     // required: [true, 'Amount is required']
   },
-  CustomerID: {
+  FullNameForLists: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'People'
   }

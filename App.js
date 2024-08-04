@@ -41,7 +41,7 @@ const connectDB = async (url)=>{
   }
   
 }
-connectDB(process.env.MONGO_COMPASS)
+connectDB(process.env.MONGO_ATLAS)
 .then(()=>{
   console.log("The data base has been connected");
 })

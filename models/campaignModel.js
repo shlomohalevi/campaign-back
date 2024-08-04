@@ -10,8 +10,14 @@ const campaignSchema = new mongoose.Schema({
   CampaignName: {
     type: String,
     required: [true, 'Campaign Name is required']
+  },
+  startDate: {
+    type: Date
+  },
+  endDate: {
+    type: Date
   }
-});
+  });
 const Campaign = mongoose.model('Campaign', campaignSchema);
 
 

@@ -11,7 +11,8 @@ const transactionSchema = new mongoose.Schema({
     // required: [true, 'Date is required']
   },
   OperationType: {
-    type: String,//enum?
+    type: String,
+    enum: ['Addition', 'Edit', 'deletion']
     // required: [true, 'Operation Type is required']
   },
   Location: {
