@@ -11,7 +11,15 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
         const newPeople = new peopleModel(people)
         await newPeople.save()
     }
-    // const people = await peopleModel.insertMany(req.body)
+    res.status(200).json({
+        status: 'success',
+        people: {
+            people
+        }
+        })
+})
+exports.getPeople = asyncHandler(async (req, res, next) => {
+    const people = await peopleModel.find().select('-__v -_id');
     res.status(200).json({
         status: 'success',
         data: {
