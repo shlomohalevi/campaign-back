@@ -67,6 +67,7 @@ const peopleSchema = new mongoose.Schema({
     },
     DonationMethod: {
       type: String
+
       // required: [true, 'Donation Method is required']
     },
     GradeAYear: {
@@ -95,7 +96,7 @@ const peopleSchema = new mongoose.Schema({
       // required: [true, 'Party Inviter Name is required']
     },
     isActive: {
-      type: Number,
+      type: Boolean,
       // required: [true, 'Active/Inactive status is required'],
       // default: false
     },
@@ -126,7 +127,6 @@ const peopleSchema = new mongoose.Schema({
     }
     });
     peopleSchema.plugin(AutoIncrement, {inc_field: 'PersonID', startAt: 1, incrementBy: 1});
-    
 
     // peopleSchema.plugin(AutoIncrement, { inc_field: 'personid' });
 
