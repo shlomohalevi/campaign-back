@@ -65,6 +65,10 @@ const peopleSchema = new mongoose.Schema({
       type: String,
       // required: [true, 'Studied in Yeshiva Years is required']
     },
+    yashagYear: {
+      type: String,
+      // required: [true, 'Yashag Year is required']
+    },
     DonationMethod: {
       type: String
 
@@ -117,6 +121,20 @@ const peopleSchema = new mongoose.Schema({
       type: String,
       // required: [true, 'Phone Notes are required']
     },
+    adressNumber: {
+      type: String,
+      // required: [true, 'adresNumber is required']
+    },
+    floor: {
+      type: String,
+      // required: [true, 'floor is required']
+    }
+    ,
+    zipCode: {
+      type: String,
+      // required: [true, 'postalCode is required']
+    }
+    ,
     Campaigns: {
       type: Map,
       of: {

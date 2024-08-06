@@ -19,7 +19,9 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
         })
 })
 exports.getPeople = asyncHandler(async (req, res, next) => {
-    const people = await peopleModel.find().select('-__v -_id');
+    const people = await peopleModel.find().
+    select('anashIdentifier FullNameForLists Address adressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
+    console.log(people.length)
     res.status(200).json({
         status: 'success',
         data: {
@@ -28,4 +30,3 @@ exports.getPeople = asyncHandler(async (req, res, next) => {
     })
 })
 
-  
