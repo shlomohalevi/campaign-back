@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors')
 const uploadsRouter = require('./Routes/uploadRouts')
+const commitmentRoute = require('./Routes/commitmentRoute')
 
 
 require('dotenv').config();
@@ -17,6 +18,7 @@ app.use(cors(corsOptions))
 // const cookieParser = require('cookie-parser');
 app.use(express.json())
 app.use('/api/alfon', uploadsRouter);
+app.use('/api/commitment', commitmentRoute);
 
 const port = 4000;
 app.listen(port, () => {
