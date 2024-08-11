@@ -1,14 +1,22 @@
 const mongoose = require('mongoose');
 
 const commitmentSchema = new mongoose.Schema({
-  commitmentId: {
+  AnashIdentifier: {
     type: String,
+    ref: 'People',
     required: [true, 'Identity Number is required']
   },
-  //commitmentid unick
-  FundraisingYear: {
-    type: Number,
-    // required: [true, 'Fundraising Year is required']
+  PersonID: {
+    type: String,
+    ref: 'People',
+  },
+  FirstName: {
+    type: String,
+    // required: [true, 'First Name is required']
+  },
+  LastName: {
+    type: String,
+    // required: [true, 'Last Name is required']
   },
   CommitmentAmount: {
     type: Number,
@@ -48,15 +56,10 @@ const commitmentSchema = new mongoose.Schema({
   ResponseToFundraiser: {
     type: String
   },
-  DebtBalance: {
-    type: Number,
-    // required: [true, 'Debt Balance is required']
-  },
-  Campaign: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: [true, 'Campaign is required'],
-    ref: 'Campaign'
-  }
+  // Campaign: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'Campaign'
+  // }
 });
 
 const Commitment = mongoose.model('Commitment', commitmentSchema);
