@@ -67,3 +67,17 @@ exports.updateUserDetails = asyncHandler(async (req, res, next) => {
         }
     })
 });
+exports.deleteUser = asyncHandler(async (req, res, next) => {
+    const anashIdentifier = req.params.anashIdentifier
+    // const deletedUser = await peopleModel.findOneAndDelete({anashIdentifier: anashIdentifier});
+    // if (!deletedUser) {
+    //     return next(new AppError('User not found', 404));
+    // }
+    res.status(200).json({
+        status: 'success',
+        data: {
+            // deletedUser
+        }
+    })
+    
+})
