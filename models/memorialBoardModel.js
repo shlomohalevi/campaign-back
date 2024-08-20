@@ -6,7 +6,9 @@ const memorialBoardSchema = new mongoose.Schema({
     required: [true, 'Customer ID is required'],
     ref: 'People'
   },
-  //id 
+  commemoration: {
+    type: String
+  },
   MemorialDay: {
     type: Date,
     required: [true, 'Memorial Day is required'],
