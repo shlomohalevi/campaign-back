@@ -19,6 +19,8 @@ app.use(cors(corsOptions))
 app.use(express.json())
 app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
+app.use('/api/payment', commitmentRoute);
+
 
 const port = 4000;
 app.listen(port, () => {

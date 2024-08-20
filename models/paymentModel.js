@@ -1,10 +1,18 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
+  AnashIdentifier: {
+    type: String,
+    ref: 'People'
+  },
   PersonID: {
     type: String,
     ref: 'People'
   },
+  CommitmentId:{
+    type: String,
+    ref: 'Commitment'},
+
   Amount: {
     type: Number
   },

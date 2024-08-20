@@ -8,42 +8,42 @@ const commitmentSchema = new mongoose.Schema({
   },
   PersonID: {
     type: String,
-    ref: 'People',
+    ref: 'People'
   },
   FirstName: {
-    type: String,
+    type: String
     // required: [true, 'First Name is required']
   },
   LastName: {
-    type: String,
+    type: String
     // required: [true, 'Last Name is required']
   },
   CommitmentAmount: {
-    type: Number,
+    type: Number
     // required: [true, 'Commitment Amount is required']
   },
   AmountPaid: {
-    type: Number,
+    type: Number
     // required: [true, 'Amount Paid is required']
   },
   AmountRemaining: {
-    type: Number,
+    type: Number
     // required: [true, 'Amount Remaining is required']
   },
   NumberOfPayments: {
-    type: Number,
+    type: Number
     // required: [true, 'Number of Payments is required']
   },
   PaymentsMade: {
-    type: Number,
+    type: Number
     // required: [true, 'Payments Made is required']
   },
   PaymentsRemaining: {
-    type: Number,
+    type: Number
     // required: [true, 'Payments Remaining is required']
   },
   Fundraiser: {
-    type: String,
+    type: String
     // required: [true, 'Fundraiser is required']
   },
   PaymentMethod: {
@@ -56,6 +56,12 @@ const commitmentSchema = new mongoose.Schema({
   ResponseToFundraiser: {
     type: String
   },
+  MemorialDay: {
+    type: Date
+  },
+  Commemoration: {
+    type: String
+  }
   // Campaign: {
   //   type: mongoose.Schema.Types.ObjectId,
   //   ref: 'Campaign'
