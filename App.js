@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors')
 const uploadsRouter = require('./Routes/uploadRouts')
 const commitmentRoute = require('./Routes/commitmentRoute')
+const campainRoute = require('./Routes/campainsRoute')
+const globalErrorHandler = require('./utils/GlobalErrorHandler')
 
 
 require('dotenv').config();
@@ -20,6 +22,7 @@ app.use(express.json())
 app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
 app.use('/api/payment', commitmentRoute);
+app.use('/api/campain', campainRoute);
 
 
 const port = 4000;
@@ -33,6 +36,8 @@ app.listen(port, () => {
         message: 'The requested route is not exist on this server'
     })
 })
+app.use(globalErrorHandler)
+
 
 
 const connectDB = async (url)=>{

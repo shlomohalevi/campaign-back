@@ -6,4 +6,5 @@ router.route('/get-user-details/:anashIdentifier').get(uploadsControllers.getUse
 router.route('/').get(uploadsControllers.getPeople)
 router.route('/upload').post(uploadsControllers.uploadPeople)
 router.route('/update-user-details').post(uploadsControllers.updateUserDetails)
+router.route('/delete-user/:anashIdentifier').delete(uploadsControllers.deleteUser)
 module.exports = router

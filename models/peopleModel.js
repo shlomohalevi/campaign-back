@@ -135,15 +135,11 @@ const peopleSchema = new mongoose.Schema({
       // required: [true, 'postalCode is required']
     }
     ,
-    Campaigns: {
-      type: Map,
-      of: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Campaign'
-      },
-      // required: [true, 'Campaigns are required']
-    }
-    });
+    Campaigns: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Campaign'
+    }]
+        });
     peopleSchema.plugin(AutoIncrement, {inc_field: 'PersonID', startAt: 1, incrementBy: 1});
 
     // peopleSchema.plugin(AutoIncrement, { inc_field: 'personid' });

@@ -1,12 +1,7 @@
 const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const campaignSchema = new mongoose.Schema({
-  CampaignID: {
-    type: String,
-    required: [true, 'CampaignID is required'],
-    unique: true,
-  },
-  //idcampain 
   CampaignName: {
     type: String,
     required: [true, 'Campaign Name is required']
@@ -16,8 +11,18 @@ const campaignSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date
+  },
+  hebrewStartDate: {
+    type: String
+  },
+  hebrewEndDate: {
+    type: String  
   }
   });
+
+
+// campaignSchema.plugin(AutoIncrement, {inc_field: 'CampaignID', startAt: 1, incrementBy: 1});
+
 const Campaign = mongoose.model('Campaign', campaignSchema);
 
 
