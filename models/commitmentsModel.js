@@ -47,7 +47,7 @@ const commitmentSchema = new mongoose.Schema({
     // required: [true, 'Fundraiser is required']
   },
   PaymentMethod: {
-    type: String,enum: ['Cash', 'Check', 'CreditCard','DirectDebitCredit','BankTransfer','DirectDebit'],
+    type: String,enum: ['מזומן', 'שיק', 'אשראי','הו"ק אשראי','העברה בנקאית','הו"ק בנקאית'],
     // required: [true, 'Payment Method is required']
   },
   Notes: {
