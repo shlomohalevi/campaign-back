@@ -30,16 +30,6 @@ exports.getCampains = asyncHandler(async (req, res, next) => {
         }
     })
 })
-exports.getCampains = asyncHandler(async (req, res, next) => {
-
-    const campains = await campainModel.find();
-    res.status(200).json({
-        status: 'success',
-        data: {
-            campains: campains
-        }
-    })
-})
 exports.getPeopleByCampain = asyncHandler(async (req, res, next) => {
     
     const campainId = req.params.campainId;
@@ -61,6 +51,35 @@ exports.getPeopleByCampain = asyncHandler(async (req, res, next) => {
         next(new AppError(500, 'Something went wrong')); // Pass the error to the error-handling middleware
     }
 });
+exports.getPeopleNotInCampain = asyncHandler(async (req, res, next) => {
+    const campainId = req.params.campainId;
+
+    try {
+        // Find people who either do not have the Campaigns property
+        // or have a Campaigns property that does not contain the specified campainId
+        const people = await peopleModel.find({
+            $and: [
+                { isActive: { $eq: true } }, // Ensure isActive is true
+                {
+                    $or: [
+                        { Campaigns: { $exists: false } }, // No Campaigns property
+                        { Campaigns: { $ne: campainId } } // Campaigns property does not contain campaignId
+                    ]
+                }
+            ]
+        });
+        // If no people are found, return a 404 status
+        if (!people || people.length === 0) {
+            return next(new AppError(404, 'No people found'));
+        }
+
+        // Return the list of people
+        res.status(200).json(people);
+    } catch (error) {
+        next(new AppError(500, 'Something went wrong')); // Pass the error to the error-handling middleware
+    }
+});
+
 exports.addPersonToCampaign = asyncHandler(async (req, res, next) => {
     const { campainId, anashIdentifier } = req.body;
 
@@ -86,6 +105,36 @@ exports.addPersonToCampaign = asyncHandler(async (req, res, next) => {
     await person.save();
 
     res.status(200).json({ message: 'Campaign added to person successfully', person });
+});
+exports.addPeopleToCampain = asyncHandler(async (req, res, next) => {
+    const { campainId, people } = req.body;
+    const campain = await campainModel.findById(campainId);
+
+    if (!campain) {
+        return next(new AppError(404, 'Campain not found'));
+    }
+
+    if (!people || people.length === 0) {
+        return next(new AppError(400, 'No people provided'));
+    }
+
+    for (const person of people) {
+        const exists = await peopleModel.exists({ anashIdentifier: person.anashIdentifier });
+        if (!exists) {
+            return next(new AppError(404, `Person with ID ${person} does not exist in the database`));
+        }
+        else {
+            if(!person.Campaigns.includes(campainId)) {
+                person.Campaigns.push(campainId);
+                await person.save();
+            }
+        }
+
+
+    }
+
+    res.status(200).json({ message: 'People added to campain successfully' });
+
 });
   
 
