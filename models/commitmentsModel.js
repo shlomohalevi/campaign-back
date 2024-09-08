@@ -61,12 +61,14 @@ const commitmentSchema = new mongoose.Schema({
   },
   Commemoration: {
     type: String
+  },
+  CampainName: {
+    type: String,
   }
-  // Campaign: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'Campaign'
-  // }
 });
+
+// הוספת אינדקס ייחודי על שילוב של campaignName ו-AnashIdentifier
+commitmentSchema.index({ AnashIdentifier: 1, CampainName: 1 }, { unique: true });
 
 const Commitment = mongoose.model('Commitment', commitmentSchema);
 
