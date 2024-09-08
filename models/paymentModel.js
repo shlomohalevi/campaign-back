@@ -19,7 +19,7 @@ const paymentSchema = new mongoose.Schema({
   PaymentMethod: {
     type: String,enum: ['מזומן', 'שיק', 'אשראי','הו"ק אשראי','העברה בנקאית','הו"ק בנקאית'],
   },
-  Campaign: {
+  campaignName: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Campaign'
   },
