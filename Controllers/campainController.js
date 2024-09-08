@@ -7,11 +7,10 @@ const peopleModel = require('../Models/peopleModel')
 
 exports.addCampain = asyncHandler(async (req, res, next) => {
     const { start, end, campainName } = req.body;
-    console.log(start, end, campainName)
     const hebrewStartDate = start.jewishDateStrHebrew;
     const hebrewEndDate = end.jewishDateStrHebrew;
     const newCampain = await campainModel.create({ startDate: start.date,
-         endDate: end.date, CampaignName: campainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate});
+         endDate: end.date, campainName: campainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate});
     res.status(201).json({
         status: 'success',
         data: {

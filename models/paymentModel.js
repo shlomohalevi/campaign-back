@@ -17,10 +17,9 @@ const paymentSchema = new mongoose.Schema({
     type: Number
   },
   PaymentMethod: {
-    type: String,enum: ['Cash', 'Check', 'CreditCard','DirectDebitCredit','BankTransfer','DirectDebit'],
-    
+    type: String,enum: ['מזומן', 'שיק', 'אשראי','הו"ק אשראי','העברה בנקאית','הו"ק בנקאית'],
   },
-  Campaign: {
+  campaignName: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Campaign'
   },
