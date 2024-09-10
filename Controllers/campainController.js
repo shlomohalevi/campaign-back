@@ -6,11 +6,11 @@ const peopleModel = require('../Models/peopleModel')
 
 
 exports.addCampain = asyncHandler(async (req, res, next) => {
-    const { start, end, campainName } = req.body;
+    const { start, end, CampainName } = req.body;
     const hebrewStartDate = start.jewishDateStrHebrew;
     const hebrewEndDate = end.jewishDateStrHebrew;
     const newCampain = await campainModel.create({ startDate: start.date,
-         endDate: end.date, campainName: campainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate});
+         endDate: end.date, CampainName: CampainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate});
     res.status(201).json({
         status: 'success',
         data: {
@@ -80,10 +80,10 @@ exports.getPeopleNotInCampain = asyncHandler(async (req, res, next) => {
 });
 
 exports.addPersonToCampaign = asyncHandler(async (req, res, next) => {
-    const { campainId, anashIdentifier } = req.body;
+    const { campainId, AnashIdentifier } = req.body;
 
     // Find the person by their identifier
-    const person = await peopleModel.findOne({ anashIdentifier });
+    const person = await peopleModel.findOne({ AnashIdentifier });
 
     if (!person) {
         return res.status(404).json({ message: 'Person not found' });
@@ -118,7 +118,7 @@ exports.addPeopleToCampain = asyncHandler(async (req, res, next) => {
     }
 
     for (const person of people) {
-        const exists = await peopleModel.exists({ anashIdentifier: person.anashIdentifier });
+        const exists = await peopleModel.exists({ AnashIdentifier: person.AnashIdentifier });
         if (!exists) {
             return next(new AppError(404, `Person with ID ${person} does not exist in the database`));
         }

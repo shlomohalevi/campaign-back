@@ -6,6 +6,7 @@ router.route('/').get(commitmentController.getCommitment)
 router.route('/upload').post(commitmentController.uploadCommitment)
 router.route('/uploadPayment').post(commitmentController.uploadPayment);
 router.route('/get-commitment/:_id').get(commitmentController.getCommitmentById)
+router.route('/getcommitmentbyanashandcampaign/:AnashIdentifier/:CampainName').get(commitmentController.getcommitmentbyanashandcampaign);
 router.route('/delete-commitment/:commitmentId').delete(commitmentController.deleteCommitment)
 router.route('/update-commitment-details/:commitmentId').post(commitmentController.updateCommitmentDetails);
 
