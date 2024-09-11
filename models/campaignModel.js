@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const campaignSchema = new mongoose.Schema({
-  campainName: {
+  CampainName: {
     type: String,
     required: [true, 'Campaign Name is required'],
     unique: true  // Ensure campaign names are unique for reference purposes

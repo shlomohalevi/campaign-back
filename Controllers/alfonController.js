@@ -10,7 +10,7 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 
   for (const person of people) {
       await peopleModel.findOneAndUpdate(
-          { anashIdentifier: person.anashIdentifier },  // search criteria
+          { AnashIdentifier: person.AnashIdentifier },  // search criteria
           { $set: person },  // only update the fields provided in `person`
           { upsert: true, new: true }  // options: create if not exists, return the updated document
       );
@@ -41,7 +41,7 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
   };
 
   await Promise.all(peopleArray.map(async (person) => {
-    const existingPerson = await peopleModel.findOne({ anashIdentifier: person.anashIdentifier });
+    const existingPerson = await peopleModel.findOne({ AnashIdentifier: person.AnashIdentifier });
 
     if (existingPerson) {
       const existingPersonObj = existingPerson.toObject();
@@ -84,7 +84,7 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
         }, {});
 
         diffArray.push({
-          anashIdentifier: existingPerson.anashIdentifier,
+          AnashIdentifier: existingPerson.AnashIdentifier,
           fullName: existingPerson.FullNameForLists,
           existingPerson: existingDiff,
           uploadedPerson: uploadedDiff,
@@ -116,7 +116,7 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
   
   exports.getPeople = asyncHandler(async (req, res, next) => {
     const people = await peopleModel.find().
-    select('anashIdentifier FirstName LastName Address addressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
+    select('AnashIdentifier FirstName LastName Address addressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
     res.status(200).json({
         status: 'success',
         data: {
@@ -126,9 +126,10 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
 })
 
 exports.getUserDetails = asyncHandler(async (req, res, next) => {
-    const anashIdentifier = req.params.anashIdentifier // Trim any whitespace
+    const AnashIdentifier = req.params.AnashIdentifier // Trim any whitespace
+    console.log(AnashIdentifier);
     
-    const userDetails = await peopleModel.findOne({anashIdentifier: anashIdentifier});
+    const userDetails = await peopleModel.findOne({AnashIdentifier: AnashIdentifier});
     
     console.log('Found user details:', userDetails);
     
@@ -142,16 +143,16 @@ exports.getUserDetails = asyncHandler(async (req, res, next) => {
 });
 exports.updateUserDetails = asyncHandler(async (req, res, next) => {
     console.log('e')
-    const {anashIdentifier} = req.body
+    const {AnashIdentifier} = req.body
     const updatedDetails = req.body
 
-    const userDetails = await peopleModel.findOne({anashIdentifier: anashIdentifier});
+    const userDetails = await peopleModel.findOne({AnashIdentifier: AnashIdentifier});
     if (!userDetails) {
         return next(new AppError('User not found', 404));
     }
 
     const updatedUserDetails = await peopleModel.findOneAndUpdate(
-        { anashIdentifier: anashIdentifier },
+        { AnashIdentifier: AnashIdentifier },
         { $set:updatedDetails}, // Only update the fields provided in req.body
         {
             new: true, // Return the updated document
@@ -166,15 +167,15 @@ exports.updateUserDetails = asyncHandler(async (req, res, next) => {
     })
 });
 exports.deleteUser = asyncHandler(async (req, res, next) => {
-    const anashIdentifier = req.params.anashIdentifier
-    // const deletedUser = await peopleModel.findOneAndDelete({anashIdentifier: anashIdentifier});
-    // if (!deletedUser) {
-    //     return next(new AppError('User not found', 404));
-    // }
+    const AnashIdentifier = req.params.AnashIdentifier
+    const deletedUser = await peopleModel.findOneAndDelete({AnashIdentifier: AnashIdentifier});
+    if (!deletedUser) {
+        return next(new AppError('User not found', 404));
+    }
     res.status(200).json({
         status: 'success',
         data: {
-            // deletedUser
+            deletedUser
         }
     })
     
