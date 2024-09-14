@@ -1,7 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const commitmentsModel = require('../models/commitmentsModel');
 const paymentModel = require('../models/paymentModel');
-const People = require('../Models/peopleModel');
+const People = require('../Models/peopleModel')
+const AppError = require('../utils/AppError');
 
 
 exports.uploadCommitment = asyncHandler(async (req, res, next) => {
@@ -113,20 +114,22 @@ exports.getCommitment = asyncHandler(async (req, res, next) => {
     })
 })
 
-exports.getcommitmentbyanashandcampaign = async (AnashIdentifier, CampainName) => {
+exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
+    console.log(req.query);
+    const { AnashIdentifier, CampainName } = req.query; 
+
     try {
-        // מציאת התחייבות לפי AnashIdentifier ו-CampainName
         const commitment = await commitmentsModel.findOne({
             AnashIdentifier: AnashIdentifier,
             CampainName: CampainName
         });
         if (commitment) {
-            return commitment;
+            res.json(commitment);
         } else {
-            throw new Error('התחייבות לא נמצאה');
+          return  res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
     } catch (error) {
-        throw error;
+        res.status(500).json({ message: error.message });
     }
 };
 
