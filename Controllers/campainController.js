@@ -1,16 +1,18 @@
 const asyncHandler = require('express-async-handler')
 const AppError = require('../utils/AppError')
 const mongoose = require('mongoose')
-const campainModel = require('../Models/campaignModel')
+const campainModel = require('../models/campaignModel')
 const peopleModel = require('../Models/peopleModel')
 
 
 exports.addCampain = asyncHandler(async (req, res, next) => {
-    const { start, end, CampainName } = req.body;
+    console.log(req.body);
+    
+    const { start, end, CampainName, minimumAmountForMemorialDay } = req.body;
     const hebrewStartDate = start.jewishDateStrHebrew;
     const hebrewEndDate = end.jewishDateStrHebrew;
     const newCampain = await campainModel.create({ startDate: start.date,
-         endDate: end.date, CampainName: CampainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate});
+         endDate: end.date, CampainName: CampainName ,hebrewStartDate: hebrewStartDate, hebrewEndDate: hebrewEndDate, minimumAmountForMemorialDay: minimumAmountForMemorialDay});
     res.status(201).json({
         status: 'success',
         data: {

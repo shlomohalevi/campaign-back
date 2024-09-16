@@ -20,6 +20,10 @@ const campaignSchema = new mongoose.Schema({
   },
   hebrewEndDate: {
     type: String
+  },
+  minimumAmountForMemorialDay: {
+    type: Number,
+    required: [true, 'minimumAmountForMemorialDay Date is required']
   }
 });
 
