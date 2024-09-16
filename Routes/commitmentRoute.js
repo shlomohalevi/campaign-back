@@ -4,7 +4,6 @@ const router = express.Router()
 
 router.route('/').get(commitmentController.getCommitment)
 router.route('/upload').post(commitmentController.uploadCommitment)
-router.route('/uploadPayment').post(commitmentController.uploadPayment);
 router.route('/get-commitment/:_id').get(commitmentController.getCommitmentById)
 router.route('/get-commitment-by-anash-and-campain').get(commitmentController.getcommitmentbyanashandcampaign);
 router.route('/delete-commitment/:commitmentId').delete(commitmentController.deleteCommitment)
