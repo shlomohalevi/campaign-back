@@ -6,85 +6,93 @@ const AppError = require('../utils/AppError');
 
 
 exports.uploadCommitment = asyncHandler(async (req, res, next) => {
-        let data = req.body;
+    let data = req.body;
 
-        if (!Array.isArray(data)) {
-            data = [data];
-        }
+    if (!Array.isArray(data)) {
+        data = [data];
+    }
 
-        let successfulUploads = 0;
-        const failedUploads = [];
+    let successfulUploads = 0;
+    const failedUploads = [];
+    let personDetails = [];
 
-        for (const commitment of data) {
-            console.log(commitment);
+    for (const commitment of data) {
 
-            try {
-                // בדיקת קיום המזהה אנ"ש
-                const person = await People.findOne({ AnashIdentifier: commitment.AnashIdentifier });
 
-                if (!person) {
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: 'מזהה אנ"ש לא קיים במערכת',
-                    });
-                    continue;
-                }
+        try {
+            // בדיקת קיום המזהה אנ"ש
+            personDetails = await People.findOne({ AnashIdentifier: commitment.AnashIdentifier })
 
-                // בדיקת קיום התחייבות באותו קמפיין
-                const existingCommitment = await commitmentsModel.findOne({
-                    AnashIdentifier: commitment.AnashIdentifier,
-                    CampainName: commitment.CampainName
-                });
-                if (existingCommitment) {
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: `למזהה אנ"ש ${commitment.AnashIdentifier} כבר קיימת התחייבות בקמפיין ${commitment.CampainName}`,
-                    });
-                    continue;
-                }
-                
-            } catch (error) {
+            if (!personDetails) {
                 failedUploads.push({
                     AnashIdentifier: commitment.AnashIdentifier,
                     PersonID: commitment.PersonID,
                     FirstName: commitment.FirstName,
                     LastName: commitment.LastName,
-                    reason: error.message,
+                    reason: 'מזהה אנ"ש לא קיים במערכת',
                 });
                 continue;
             }
-                // יצירת ההתחייבות
-                try {
-                    await commitmentsModel.create({ ...commitment });
-                    successfulUploads += 1;
-                } catch (error) {
 
-
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: translateErrorToHebrew(error.message),
-                    });
-                }
+            // בדיקת קיום התחייבות באותו קמפיין
+            const existingCommitment = await commitmentsModel.findOne({
+                AnashIdentifier: commitment.AnashIdentifier,
+                CampainName: commitment.CampainName
+            });
+            if (existingCommitment) {
+                failedUploads.push({
+                    AnashIdentifier: commitment.AnashIdentifier,
+                    PersonID: commitment.PersonID,
+                    FirstName: commitment.FirstName,
+                    LastName: commitment.LastName,
+                    reason: `למזהה אנ"ש ${commitment.AnashIdentifier} כבר קיימת התחייבות בקמפיין ${commitment.CampainName}`,
+                });
                 continue;
+            }
 
+        } catch (error) {
+            failedUploads.push({
+                AnashIdentifier: commitment.AnashIdentifier,
+                PersonID: commitment.PersonID,
+                FirstName: commitment.FirstName,
+                LastName: commitment.LastName,
+                reason: error.message,
+            });
+            continue;
         }
+        // יצירת ההתחייבות
+        try {
+            await commitmentsModel.create({ ...commitment });
+            successfulUploads += 1;
+            console.log(personDetails);
+            personDetails.Campaigns.push(commitment.CampainName);
+            console.log(personDetails, 'a');
+            
+            const updatedPerson = await personDetails.save();
+            console.log('b');
+            console.log(updatedPerson, 'w');
 
-        res.status(200).json({
-            status: 'success',
-            successfulCommitments: successfulUploads,
-            failedCommitments: failedUploads,
-        });
+        } catch (error) {
+            console.log(error);
+            failedUploads.push({
+                AnashIdentifier: commitment.AnashIdentifier,
+                PersonID: commitment.PersonID,
+                FirstName: commitment.FirstName,
+                LastName: commitment.LastName,
+                reason: translateErrorToHebrew(error.message),
+            });
+        }
+        continue;
 
+    }
+
+    res.status(200).json({
+        status: 'success',
+        successfulCommitments: successfulUploads,
+        failedCommitments: failedUploads,
     });
+
+});
 
 
 // פונקציה לתרגום שגיאות לעברית
@@ -111,7 +119,7 @@ exports.getCommitment = asyncHandler(async (req, res, next) => {
 })
 
 exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
-    const { AnashIdentifier, CampainName } = req.query; 
+    const { AnashIdentifier, CampainName } = req.query;
 
     try {
         const commitment = await commitmentsModel.findOne({
@@ -121,7 +129,7 @@ exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
         if (commitment) {
             res.json(commitment);
         } else {
-          return  res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -132,148 +140,186 @@ exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
 
 
 exports.uploadCommitmentPayment = async (req, res, next) => {
-        // נבדוק אם הנתונים הם אובייקט יחיד או מערך
-        const paymentsData = req.body;
-        
-        const AnashIdentifier = paymentsData.AnashIdentifier;
-        if(!AnashIdentifier)
-        {
-            return  res.status(404).json({ message: 'מזהה אנ"ש לא סופק' });  // Explicitly return 404 for not found
-        }
+    // נבדוק אם הנתונים הם אובייקט יחיד או מערך
+    const paymentsData = req.body;
 
-        const person = await People.findOne({ AnashIdentifier });
-        if (!person) {
-            return  res.status(404).json({ message: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` });  // Explicitly return 404 for not found
-        }
-        try {
-            const commitmentId = paymentsData.CommitmentId;
-            const commitment = await commitmentsModel.findById(commitmentId);
-            if (!commitment) {
-                return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
-            }
-            commitment.AmountPaid   = commitment.AmountPaid + parseFloat(paymentsData.Amount);
-            commitment.AmountRemaining   = commitment.AmountRemaining - parseFloat(paymentsData.Amount);
-            commitment.PaymentsMade  = commitment.PaymentsMade  + 1;
-            commitment.PaymentsRemaining =commitment.PaymentsRemaining - 1;
-            const updatedCommitment = await commitment.save();
-            
-        } catch (error) {
-            return res.status(500).json({ message: 'שגיאה בעדכון התחייבות' });
-        }
-        try{
-            
-            const payment = await paymentModel.create(paymentsData);
-            if(payment){
-                return res.status(200).json({
-                     message: 'התשלום נוסף בהצלחה' ,
-        
-                });
-                // return  res.status(404).json({ message: 'לא ניתן להוסיף את התשלום' });  // Explicitly return 404 for not found
-            }
-        }
-        catch(error){
-            const commitmentId = paymentsData.CommitmentId;
-            const commitment = await commitmentsModel.findById(commitmentId);
-            if (!commitment) {
-                return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
-            }
-            commitment.AmountPaid   = commitment.AmountPaid - parseFloat(paymentsData.Amount);
-            commitment.AmountRemaining   = commitment.AmountRemaining + parseFloat(paymentsData.Amount);
-            commitment.PaymentsMade  = commitment.PaymentsMade  - 1;
-            commitment.PaymentsRemaining =commitment.PaymentsRemaining + 1;
-            const updatedCommitment = await commitment.save();
+    const AnashIdentifier = paymentsData.AnashIdentifier;
+    if (!AnashIdentifier) {
+        return res.status(404).json({ message: 'מזהה אנ"ש לא סופק' });  // Explicitly return 404 for not found
+    }
 
-
-            return  res.status(404).json({ message: error.message });  // Explicitly return 404 for not found
-            
+    const person = await People.findOne({ AnashIdentifier });
+    if (!person) {
+        return res.status(404).json({ message: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` });  // Explicitly return 404 for not found
+    }
+    try {
+        const commitmentId = paymentsData.CommitmentId;
+        const commitment = await commitmentsModel.findById(commitmentId);
+        if (!commitment) {
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
-            
-    };
-            
-            
-    exports.getCommitmentById = asyncHandler(async (req, res, next) => {
-        const commitmentId = req.params._id;
-        try {
-            // בדיקה ראשונית עם תצוגה של התשלומים הקשורים ל-commitmentId
-            const initialPaymentsCheck = await paymentModel.find({ commitmentId });
-    
-            // שאילתא עם Promise.all
-            const [commitmentDetails, payments] = await Promise.all([
-                commitmentsModel.findById(commitmentId),
-                paymentModel.find({ CommitmentId: commitmentId }) // מחפש תשלומים על פי ה-commitmentId
-            ]);
-            if (!commitmentDetails) {
-                return res.status(404).json({
-                    status: 'fail',
-                    message: 'Commitment not found'
-                });
-            }
-    
-            res.status(200).json({
-                status: 'success',
-                data: {
-                    commitmentDetails,
-                    payments
-                }
+        commitment.AmountPaid = commitment.AmountPaid + parseFloat(paymentsData.Amount);
+        commitment.AmountRemaining = commitment.AmountRemaining - parseFloat(paymentsData.Amount);
+        commitment.PaymentsMade = commitment.PaymentsMade + 1;
+        commitment.PaymentsRemaining = commitment.PaymentsRemaining - 1;
+        const updatedCommitment = await commitment.save();
+
+    } catch (error) {
+        return res.status(500).json({ message: 'שגיאה בעדכון התחייבות' });
+    }
+    try {
+
+        const payment = await paymentModel.create(paymentsData);
+        if (payment) {
+            return res.status(200).json({
+                message: 'התשלום נוסף בהצלחה',
+
             });
-        } catch (error) {
-            next(error);
+            // return  res.status(404).json({ message: 'לא ניתן להוסיף את התשלום' });  // Explicitly return 404 for not found
         }
-    });
-    exports.deleteCommitment = asyncHandler(async (req, res, next) => {
-        const commitmentId = req.params.commitmentId;
-        const deletedUser = await commitmentsModel.findByIdAndDelete(commitmentId);
-        if (!deletedUser) {
-            return next(new AppError('User not found', 404));
+    }
+    catch (error) {
+        const commitmentId = paymentsData.CommitmentId;
+        const commitment = await commitmentsModel.findById(commitmentId);
+        if (!commitment) {
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
+        commitment.AmountPaid = commitment.AmountPaid - parseFloat(paymentsData.Amount);
+        commitment.AmountRemaining = commitment.AmountRemaining + parseFloat(paymentsData.Amount);
+        commitment.PaymentsMade = commitment.PaymentsMade - 1;
+        commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
+        const updatedCommitment = await commitment.save();
+
+
+        return res.status(404).json({ message: error.message });  // Explicitly return 404 for not found
+
+    }
+
+};
+
+
+exports.getCommitmentById = asyncHandler(async (req, res, next) => {
+    const commitmentId = req.params._id;
+    try {
+        // בדיקה ראשונית עם תצוגה של התשלומים הקשורים ל-commitmentId
+        const initialPaymentsCheck = await paymentModel.find({ commitmentId });
+
+        // שאילתא עם Promise.all
+        const [commitmentDetails, payments] = await Promise.all([
+            commitmentsModel.findById(commitmentId),
+            paymentModel.find({ CommitmentId: commitmentId }) // מחפש תשלומים על פי ה-commitmentId
+        ]);
+        if (!commitmentDetails) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Commitment not found'
+            });
+        }
+
         res.status(200).json({
             status: 'success',
             data: {
-                // deletedUser
+                commitmentDetails,
+                payments
             }
-        })
-    
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+exports.deleteCommitment = asyncHandler(async (req, res, next) => {
+    const commitmentId = req.params.commitmentId;
+    const deletedUser = await commitmentsModel.findByIdAndDelete(commitmentId);
+    if (!deletedUser) {
+        return next(new AppError('User not found', 404));
+    }
+    res.status(200).json({
+        status: 'success',
+        data: {
+            // deletedUser
+        }
     })
+
+})
+
+exports.deletePayment = asyncHandler(async (req, res, next) => {
+    const paymentId = req.params.paymentId;
     
-    exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
-        // לוג של הנתונים המתקבלים מהבקשה
-        console.log('Request params ID:', req.params.commitmentId);
-        console.log('Request body:', req.body);
+    // חפש את התשלום כדי לדעת אילו פרטי התחייבות יש לעדכן
+    const payment = await paymentModel.findById(paymentId);
+    if (!payment) {
+        return next(new AppError('Payment not found', 404));
+    }
+
+    const commitmentId = payment.CommitmentId;
     
-        const { commitmentId } = req.params;
-        const updatedDetails = req.body;
-    
-        try {
-            const updatedCommitmentDetails = await commitmentsModel.findOneAndUpdate(
-                { _id: commitmentId },
-                { $set: updatedDetails }, // Only update the fields provided in req.body
-                {
-                    new: true, // Return the updated document
-                    runValidators: true, // Ensure schema validation is applied
-                }
-            );
-    
-            // לוג של התוצאה מהפונקציה findOneAndUpdate
-            console.log('Updated commitment details:', updatedCommitmentDetails);
-    
-            if (!updatedCommitmentDetails) {
-                return next(new AppError('Commitment not found', 404));
-            }
-    
-            res.status(200).json({
-                status: 'success',
-                data: {
-                    updateCommitmentDetails: updatedCommitmentDetails
-                }
-            });
-        } catch (error) {
-            // לוג של השגיאה במידה ויש
-            console.error('Error updating commitment:', error);
-            next(error); // להעביר את השגיאה לפונקציה הבאה בטיפול בשגיאות
+    // מחק את התשלום
+    const deletedPayment = await paymentModel.findByIdAndDelete(paymentId);
+    if (!deletedPayment) {
+        return next(new AppError('Payment not found', 404));
+    }
+
+    // עדכן את ההתחייבות
+    const commitment = await commitmentsModel.findById(commitmentId);
+    if (!commitment) {
+        return next(new AppError('Commitment not found', 404));
+    }
+
+    commitment.AmountPaid = commitment.AmountPaid - parseFloat(payment.Amount);
+    commitment.AmountRemaining = commitment.AmountRemaining + parseFloat(payment.Amount);
+    commitment.PaymentsMade = commitment.PaymentsMade - 1;
+    commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
+
+    const updatedCommitment = await commitment.save();
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            updatedCommitment
         }
     });
-            
-        
-        
+});
+
+
+exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
+    // לוג של הנתונים המתקבלים מהבקשה
+    console.log('Request params ID:', req.params.commitmentId);
+    console.log('Request body:', req.body);
+
+    const { commitmentId } = req.params;
+    const updatedDetails = req.body;
+
+    try {
+        const updatedCommitmentDetails = await commitmentsModel.findOneAndUpdate(
+            { _id: commitmentId },
+            { $set: updatedDetails }, // Only update the fields provided in req.body
+            {
+                new: true, // Return the updated document
+                runValidators: true, // Ensure schema validation is applied
+            }
+        );
+
+        // לוג של התוצאה מהפונקציה findOneAndUpdate
+        console.log('Updated commitment details:', updatedCommitmentDetails);
+
+        if (!updatedCommitmentDetails) {
+            return next(new AppError('Commitment not found', 404));
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                updateCommitmentDetails: updatedCommitmentDetails
+            }
+        });
+    } catch (error) {
+        // לוג של השגיאה במידה ויש
+        console.error('Error updating commitment:', error);
+        next(error); // להעביר את השגיאה לפונקציה הבאה בטיפול בשגיאות
+    }
+});
+
+
+
 
 

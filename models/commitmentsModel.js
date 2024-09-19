@@ -70,6 +70,9 @@ const commitmentSchema = new mongoose.Schema({
 // הוספת אינדקס ייחודי על שילוב של campaignName ו-AnashIdentifier
 commitmentSchema.index({ AnashIdentifier: 1, CampainName: 1 }, { unique: true });
 
-const Commitment = mongoose.model('Commitment', commitmentSchema);
+// בדיקה אם המודל כבר קיים כדי למנוע שגיאת OverwriteModelError
+const Commitment = mongoose.models.Commitment || mongoose.model('Commitment', commitmentSchema);
+
+
 
 module.exports = Commitment;
