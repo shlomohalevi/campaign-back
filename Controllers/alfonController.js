@@ -184,6 +184,9 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
 
 exports.addPerson = asyncHandler(async (req, res, next) => {
     const newPerson = await peopleModel.create(req.body);
+    if(!newPerson) {
+        return next(new AppError('שגיאה ביצירת משתמש', 404));
+    }
     res.status(201).json({
         status: 'success',
         data: {

@@ -16,7 +16,6 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
         const failedUploads = [];
 
         for (const commitment of data) {
-            console.log(commitment);
 
             try {
                 // בדיקת קיום המזהה אנ"ש
@@ -38,7 +37,7 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
                     AnashIdentifier: commitment.AnashIdentifier,
                     CampainName: commitment.CampainName
                 });
-                if (existingCommitment) {
+                if (existingCommitment && existingCommitment.CampainName) {
                     failedUploads.push({
                         AnashIdentifier: commitment.AnashIdentifier,
                         PersonID: commitment.PersonID,
@@ -64,7 +63,8 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
                     await commitmentsModel.create({ ...commitment });
                     successfulUploads += 1;
                 } catch (error) {
-
+                    
+                    console.log(error);
 
                     failedUploads.push({
                         AnashIdentifier: commitment.AnashIdentifier,
@@ -77,6 +77,7 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
                 continue;
 
         }
+
 
         res.status(200).json({
             status: 'success',
