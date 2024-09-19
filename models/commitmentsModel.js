@@ -74,6 +74,9 @@ commitmentSchema.index(
   { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
 );
 
-const Commitment = mongoose.model('Commitment', commitmentSchema);
+// בדיקה אם המודל כבר קיים כדי למנוע שגיאת OverwriteModelError
+const Commitment = mongoose.models.Commitment || mongoose.model('Commitment', commitmentSchema);
+
+
 
 module.exports = Commitment;
