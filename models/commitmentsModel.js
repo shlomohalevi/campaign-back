@@ -64,11 +64,15 @@ const commitmentSchema = new mongoose.Schema({
   },
   CampainName: {
     type: String,
+    default: '',
   }
 });
 
 // הוספת אינדקס ייחודי על שילוב של campaignName ו-AnashIdentifier
-commitmentSchema.index({ AnashIdentifier: 1, CampainName: 1 }, { unique: true });
+commitmentSchema.index(
+  { AnashIdentifier: 1, CampainName: 1 },
+  { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
+);
 
 // בדיקה אם המודל כבר קיים כדי למנוע שגיאת OverwriteModelError
 const Commitment = mongoose.models.Commitment || mongoose.model('Commitment', commitmentSchema);

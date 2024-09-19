@@ -17,8 +17,6 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
     let personDetails = [];
 
     for (const commitment of data) {
-
-
         try {
             // בדיקת קיום המזהה אנ"ש
             personDetails = await People.findOne({ AnashIdentifier: commitment.AnashIdentifier })
@@ -49,7 +47,6 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
                 });
                 continue;
             }
-
         } catch (error) {
             failedUploads.push({
                 AnashIdentifier: commitment.AnashIdentifier,
@@ -71,7 +68,6 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
             const updatedPerson = await personDetails.save();
             console.log('b');
             console.log(updatedPerson, 'w');
-
         } catch (error) {
             console.log(error);
             failedUploads.push({
@@ -85,7 +81,6 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
         continue;
 
     }
-
     res.status(200).json({
         status: 'success',
         successfulCommitments: successfulUploads,
