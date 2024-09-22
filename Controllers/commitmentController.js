@@ -6,85 +6,88 @@ const AppError = require('../utils/AppError');
 
 
 exports.uploadCommitment = asyncHandler(async (req, res, next) => {
-        let data = req.body;
+    let data = req.body;
 
-        if (!Array.isArray(data)) {
-            data = [data];
-        }
+    if (!Array.isArray(data)) {
+        data = [data];
+    }
 
-        let successfulUploads = 0;
-        const failedUploads = [];
+    let successfulUploads = 0;
+    const failedUploads = [];
+    let personDetails = [];
 
-        for (const commitment of data) {
-            console.log(commitment);
+    for (const commitment of data) {
+        try {
+            // בדיקת קיום המזהה אנ"ש
+            personDetails = await People.findOne({ AnashIdentifier: commitment.AnashIdentifier })
 
-            try {
-                // בדיקת קיום המזהה אנ"ש
-                const person = await People.findOne({ AnashIdentifier: commitment.AnashIdentifier });
-
-                if (!person) {
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: 'מזהה אנ"ש לא קיים במערכת',
-                    });
-                    continue;
-                }
-
-                // בדיקת קיום התחייבות באותו קמפיין
-                const existingCommitment = await commitmentsModel.findOne({
-                    AnashIdentifier: commitment.AnashIdentifier,
-                    CampainName: commitment.CampainName
-                });
-                if (existingCommitment) {
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: `למזהה אנ"ש ${commitment.AnashIdentifier} כבר קיימת התחייבות בקמפיין ${commitment.CampainName}`,
-                    });
-                    continue;
-                }
-                
-            } catch (error) {
+            if (!personDetails) {
                 failedUploads.push({
                     AnashIdentifier: commitment.AnashIdentifier,
                     PersonID: commitment.PersonID,
                     FirstName: commitment.FirstName,
                     LastName: commitment.LastName,
-                    reason: error.message,
+                    reason: 'מזהה אנ"ש לא קיים במערכת',
                 });
                 continue;
             }
-                // יצירת ההתחייבות
-                try {
-                    await commitmentsModel.create({ ...commitment });
-                    successfulUploads += 1;
-                } catch (error) {
 
-
-                    failedUploads.push({
-                        AnashIdentifier: commitment.AnashIdentifier,
-                        PersonID: commitment.PersonID,
-                        FirstName: commitment.FirstName,
-                        LastName: commitment.LastName,
-                        reason: translateErrorToHebrew(error.message),
-                    });
-                }
+            // בדיקת קיום התחייבות באותו קמפיין
+            const existingCommitment = await commitmentsModel.findOne({
+                AnashIdentifier: commitment.AnashIdentifier,
+                CampainName: commitment.CampainName
+            });
+            if (existingCommitment) {
+                failedUploads.push({
+                    AnashIdentifier: commitment.AnashIdentifier,
+                    PersonID: commitment.PersonID,
+                    FirstName: commitment.FirstName,
+                    LastName: commitment.LastName,
+                    reason: `למזהה אנ"ש ${commitment.AnashIdentifier} כבר קיימת התחייבות בקמפיין ${commitment.CampainName}`,
+                });
                 continue;
-
+            }
+        } catch (error) {
+            failedUploads.push({
+                AnashIdentifier: commitment.AnashIdentifier,
+                PersonID: commitment.PersonID,
+                FirstName: commitment.FirstName,
+                LastName: commitment.LastName,
+                reason: error.message,
+            });
+            continue;
         }
+        // יצירת ההתחייבות
+        try {
+            await commitmentsModel.create({ ...commitment });
+            successfulUploads += 1;
+            console.log(personDetails);
+            personDetails.Campaigns.push(commitment.CampainName);
+            console.log(personDetails, 'a');
+            
+            const updatedPerson = await personDetails.save();
+            console.log('b');
+            console.log(updatedPerson, 'w');
+        } catch (error) {
+            console.log(error);
+            failedUploads.push({
+                AnashIdentifier: commitment.AnashIdentifier,
+                PersonID: commitment.PersonID,
+                FirstName: commitment.FirstName,
+                LastName: commitment.LastName,
+                reason: translateErrorToHebrew(error.message),
+            });
+        }
+        continue;
 
-        res.status(200).json({
-            status: 'success',
-            successfulCommitments: successfulUploads,
-            failedCommitments: failedUploads,
-        });
-
+    }
+    res.status(200).json({
+        status: 'success',
+        successfulCommitments: successfulUploads,
+        failedCommitments: failedUploads,
     });
+
+});
 
 
 // פונקציה לתרגום שגיאות לעברית
@@ -110,9 +113,20 @@ exports.getCommitment = asyncHandler(async (req, res, next) => {
     })
 })
 
+exports.getCommitmentsByCampaign = asyncHandler(async (req, res, next) => {
+    const { campainName } = req.params; 
+    const commitment = await commitmentsModel.find({CampainName: campainName})
+        .select('AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser');
+        res.status(200).json({
+        status: 'success',
+        data: {
+            commitment
+        }
+    })
+})
+
 exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
-    console.log(req.query);
-    const { AnashIdentifier, CampainName } = req.query; 
+    const { AnashIdentifier, CampainName } = req.query;
 
     try {
         const commitment = await commitmentsModel.findOne({
@@ -122,188 +136,72 @@ exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
         if (commitment) {
             res.json(commitment);
         } else {
-          return  res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-async function updateCommitmentAfterPayment(commitment, payment) {
-    const updatedAmountPaid = commitment.AmountPaid + parseFloat(payment.Amount);
-    const updatedAmountRemaining = commitment.AmountRemaining - payment.Amount;
-    const updatedPaymentsMade = commitment.PaymentsMade + 1;
-    const updatedPaymentsRemaining = commitment.PaymentsRemaining - 1;
-    console.log(updatedAmountPaid, commitment.AmountPaid, payment.Amount);
-
-    // בדיקות לתנאים חריגים
-    if (updatedAmountPaid > commitment.CommitmentAmount) {
-        return { success: false, message: 'סכום התשלום חורג מסכום ההתחייבות' };
-    }
-    if (updatedAmountRemaining < 0) {
-        return { success: false, message: 'סכום התשלום גדול מהסכום שנותר לתשלום' };
-    }
-    if (updatedAmountRemaining > commitment.CommitmentAmount) {
-        return { success: false, message: 'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות' };
-    }
-    if (updatedPaymentsRemaining < 0) {
-        return { success: false, message: 'לא נותרו תשלומים בהתחייבות' };
-    }
-    if (updatedPaymentsRemaining > commitment.NumberOfPayments) {
-        return { success: false, message: 'מספר התשלומים שנותרו גדול מסך התשלומים ' };
-    }
-    if (updatedPaymentsMade > commitment.NumberOfPayments) {
-        return { success: false, message: 'מספר התשלומים חורג מסך התשלומים ' };
-    }
-
-    // ניסיון לעדכן את ההתחייבות
-    try {
-        const updatedCommitment = await commitmentsModel.updateOne(
-            { _id: commitment._id },
-            {
-                AmountPaid: updatedAmountPaid,
-                AmountRemaining: updatedAmountRemaining,
-                PaymentsMade: updatedPaymentsMade,
-                PaymentsRemaining: updatedPaymentsRemaining
-            }
-        );
-
-        // החזרת ההתחייבות המעודכנת אם העדכון הצליח
-        if (updatedCommitment.modifiedCount > 0) {
-            return { success: true, data: updatedCommitment };
-        } else {
-            return { success: false, message: 'לא הצליח לעדכן את ההתחייבות' };
-        }
-    } catch (error) {
-        return { success: false, message: 'שגיאה בעדכון ההתחייבות: ' + error.message };
-    }
-}
 
 
-exports.uploadPayment = asyncHandler(async (req, res, next) => {
-    const validPayments = []
-    const invalidPayments = []
-    try {
-        // נבדוק אם הנתונים הם אובייקט יחיד או מערך
-        const paymentsData = Array.isArray(req.body) ? req.body : [req.body];
-
-        // בדיקת מזהה אנ"ש עבור כל תשלום
-        for (const payment of paymentsData) {
-            payment.Amount = parseFloat(payment.Amount)
-            const AnashIdentifier = payment.AnashIdentifier;
-            if (!AnashIdentifier) {
-                invalidPayments.push[{reason: 'מזהה אנ"ש לא סופק' }];
-                throw new Error('מזהה אנ"ש לא סופק');          
-            }
-
-            const person = await People.findOne({ AnashIdentifier });
-            if (!person) {
-                invalidPayments.push[{reason: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` }];
-                throw new Error(`מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת`);     
-            }
-
-            try {
-
-                const commitment = await exports.getcommitmentbyanashandcampaign(AnashIdentifier, payment.CampainName);
-
-
-                const updatedCommitment = await updateCommitmentAfterPayment(commitment, payment);
-                if (updatedCommitment.success) {
-                payment.CommitmentId = commitment._id;
-                validPayments.push(payment);
-                }
-                else {
-                    invalidPayments.push[{reason: updatedCommitment.message, AnashIdentifier: payment.AnashIdentifier }];
-                }
-            } catch (error) {
-                console.log(error);
-                invalidPayments.push({ reason: error.message, AnashIdentifier: payment.AnashIdentifier });
-            }
-
-        }
-
-        // אם כל מזהי האנ"ש תקינים, הוסף את התשלומים
-        if (validPayments.length > 0) {
-            try {
-                console.log('chipopo');
-
-                const payments = await paymentModel.insertMany(validPayments);
-                console.log('payments');
-                res.status(200).json({
-                    status: 'success',
-                    payments: payments,
-                    numberOfPayments: validPayments.length,
-                    invalidPayments: invalidPayments
-                });
-            }
-            catch (error) {
-                console.log(error);
-                
-            }
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            status: 'error',
-            message: 'Failed to upload payments',
-            error: error.message
-        });
-    }
-});
 
 exports.uploadCommitmentPayment = async (req, res, next) => {
-        // נבדוק אם הנתונים הם אובייקט יחיד או מערך
-        // const paymentsData = Array.isArray(req.body) ? req.body : [req.body];
-        const paymentsData = req.body;
-        const AnashIdentifier = paymentsData.AnashIdentifier;
-        if(!AnashIdentifier)
-        {
-            return  res.status(404).json({ message: 'מזהה אנ"ש לא סופק' });  // Explicitly return 404 for not found
-        }
+    // נבדוק אם הנתונים הם אובייקט יחיד או מערך
+    const paymentsData = req.body;
 
-        const person = await People.findOne({ AnashIdentifier });
-        if (!person) {
-            return  res.status(404).json({ message: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` });  // Explicitly return 404 for not found
+    const AnashIdentifier = paymentsData.AnashIdentifier;
+    if (!AnashIdentifier) {
+        return res.status(404).json({ message: 'מזהה אנ"ש לא סופק' });  // Explicitly return 404 for not found
+    }
+
+    const person = await People.findOne({ AnashIdentifier });
+    if (!person) {
+        return res.status(404).json({ message: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` });  // Explicitly return 404 for not found
+    }
+    try {
+        const commitmentId = paymentsData.CommitmentId;
+        const commitment = await commitmentsModel.findById(commitmentId);
+        if (!commitment) {
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
-        try{
-            
-            const payment = await paymentModel.create(paymentsData);
-            if(!payment){
-                return  res.status(404).json({ message: 'לא ניתן להוסיף את התשלום' });  // Explicitly return 404 for not found
-            }
-        }
-        catch(error){
-            return  res.status(404).json({ message: error.message });  // Explicitly return 404 for not found
-            
-        }
-        
-        try {
-            const commitmentId = paymentsData.CommitmentId;
-            console.log(paymentsData);
-            const commitment = await commitmentsModel.findById(commitmentId);
-            if (!commitment) {
-                return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
-            }
-            commitment.AmountPaid   = commitment.AmountPaid + parseFloat(paymentsData.Amount);
-            commitment.AmountRemaining   = commitment.AmountRemaining - parseFloat(paymentsData.Amount);
-            commitment.PaymentsMade  = commitment.PaymentsMade  + 1;
-            commitment.PaymentsRemaining =commitment.PaymentsRemaining - 1;
-            const updatedCommitment = await commitment.save();
+        commitment.AmountPaid = commitment.AmountPaid + parseFloat(paymentsData.Amount);
+        commitment.AmountRemaining = commitment.AmountRemaining - parseFloat(paymentsData.Amount);
+        commitment.PaymentsMade = commitment.PaymentsMade + 1;
+        commitment.PaymentsRemaining = commitment.PaymentsRemaining - 1;
+        const updatedCommitment = await commitment.save();
+
+    } catch (error) {
+        return res.status(500).json({ message: 'שגיאה בעדכון התחייבות' });
+    }
+    try {
+
+        const payment = await paymentModel.create(paymentsData);
+        if (payment) {
             return res.status(200).json({
-                 message: 'התשלום נוסף בהצלחה' ,
+                message: 'התשלום נוסף בהצלחה',
 
-                commitment: updatedCommitment
             });
-            
-            
-        
-            
-    
-        } catch (error) {
-            await paymentModel.findOneAndDelete({ AnashIdentifier: AnashIdentifier });
-           return res.status(500).json({ message: 'שגיאה בעדכון התחייבות' });
+            // return  res.status(404).json({ message: 'לא ניתן להוסיף את התשלום' });  // Explicitly return 404 for not found
         }
-        
+    }
+    catch (error) {
+        const commitmentId = paymentsData.CommitmentId;
+        const commitment = await commitmentsModel.findById(commitmentId);
+        if (!commitment) {
+            return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
+        }
+        commitment.AmountPaid = commitment.AmountPaid - parseFloat(paymentsData.Amount);
+        commitment.AmountRemaining = commitment.AmountRemaining + parseFloat(paymentsData.Amount);
+        commitment.PaymentsMade = commitment.PaymentsMade - 1;
+        commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
+        const updatedCommitment = await commitment.save();
+
+
+        return res.status(404).json({ message: error.message });  // Explicitly return 404 for not found
+
+    }
+
 };
 
 
@@ -351,6 +249,45 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
 
 })
 
+exports.deletePayment = asyncHandler(async (req, res, next) => {
+    const paymentId = req.params.paymentId;
+    
+    // חפש את התשלום כדי לדעת אילו פרטי התחייבות יש לעדכן
+    const payment = await paymentModel.findById(paymentId);
+    if (!payment) {
+        return next(new AppError('Payment not found', 404));
+    }
+
+    const commitmentId = payment.CommitmentId;
+    
+    // מחק את התשלום
+    const deletedPayment = await paymentModel.findByIdAndDelete(paymentId);
+    if (!deletedPayment) {
+        return next(new AppError('Payment not found', 404));
+    }
+
+    // עדכן את ההתחייבות
+    const commitment = await commitmentsModel.findById(commitmentId);
+    if (!commitment) {
+        return next(new AppError('Commitment not found', 404));
+    }
+
+    commitment.AmountPaid = commitment.AmountPaid - parseFloat(payment.Amount);
+    commitment.AmountRemaining = commitment.AmountRemaining + parseFloat(payment.Amount);
+    commitment.PaymentsMade = commitment.PaymentsMade - 1;
+    commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
+
+    const updatedCommitment = await commitment.save();
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            updatedCommitment
+        }
+    });
+});
+
+
 exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
     // לוג של הנתונים המתקבלים מהבקשה
     console.log('Request params ID:', req.params.commitmentId);
@@ -388,3 +325,8 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
         next(error); // להעביר את השגיאה לפונקציה הבאה בטיפול בשגיאות
     }
 });
+
+
+
+
+

@@ -56,20 +56,30 @@ const commitmentSchema = new mongoose.Schema({
   ResponseToFundraiser: {
     type: String
   },
-  MemorialDay: {
+  MemorialDays: [{
     type: Date
-  },
+  }],
+  hebrewMemorialDay: [{
+    type: String
+  }],
   Commemoration: {
     type: String
   },
   CampainName: {
     type: String,
+    default: '',
   }
 });
 
 // הוספת אינדקס ייחודי על שילוב של campaignName ו-AnashIdentifier
-commitmentSchema.index({ AnashIdentifier: 1, CampainName: 1 }, { unique: true });
+commitmentSchema.index(
+  { AnashIdentifier: 1, CampainName: 1 },
+  { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
+);
 
-const Commitment = mongoose.model('Commitment', commitmentSchema);
+// בדיקה אם המודל כבר קיים כדי למנוע שגיאת OverwriteModelError
+const Commitment = mongoose.models.Commitment || mongoose.model('Commitment', commitmentSchema);
+
+
 
 module.exports = Commitment;
