@@ -224,10 +224,16 @@ exports.getCommitmentById = asyncHandler(async (req, res, next) => {
 });
 exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     const commitmentId = req.params.commitmentId;
-    const deletedUser = await commitmentsModel.findByIdAndDelete(commitmentId);
-    if (!deletedUser) {
+    const deltedCommitment = await commitmentsModel.findByIdAndDelete(commitmentId);
+
+    if (!deltedCommitment) {
         return next(new AppError('User not found', 404));
     }
+    else
+    {
+        const deletedPayments = await paymentModel.deleteMany({ CommitmentId: commitmentId });
+    }
+
     res.status(200).json({
         status: 'success',
         data: {
