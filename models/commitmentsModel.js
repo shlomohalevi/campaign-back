@@ -56,9 +56,12 @@ const commitmentSchema = new mongoose.Schema({
   ResponseToFundraiser: {
     type: String
   },
-  MemorialDay: {
+  MemorialDays: [{
     type: Date
-  },
+  }],
+  hebrewMemorialDay: [{
+    type: String
+  }],
   Commemoration: {
     type: String
   },

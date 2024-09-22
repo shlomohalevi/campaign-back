@@ -113,6 +113,18 @@ exports.getCommitment = asyncHandler(async (req, res, next) => {
     })
 })
 
+exports.getCommitmentsByCampaign = asyncHandler(async (req, res, next) => {
+    const { campainName } = req.params; 
+    const commitment = await commitmentsModel.find({CampainName: campainName})
+        .select('AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser');
+        res.status(200).json({
+        status: 'success',
+        data: {
+            commitment
+        }
+    })
+})
+
 exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
     const { AnashIdentifier, CampainName } = req.query;
 
