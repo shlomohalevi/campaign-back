@@ -82,7 +82,6 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: '',
     unique: true,
-    required: [true, 'PersonID is required'],
   },
   Classification: {
     type: String,
