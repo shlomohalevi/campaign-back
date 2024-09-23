@@ -57,14 +57,10 @@ const commitmentSchema = new mongoose.Schema({
     type: String
   },
   MemorialDays: [{
-    type: Date
+    date: { type: Date, required: true }, // Property 1
+    hebrewDate: { type: String, required: true }, // Property 2
+    Commeration: { type: String } // Property 3
   }],
-  hebrewMemorialDay: [{
-    type: String
-  }],
-  Commemoration: {
-    type: String
-  },
   CampainName: {
     type: String,
     default: '',
