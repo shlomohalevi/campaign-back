@@ -11,4 +11,6 @@ router.route('/get-people-not-in-campain/:campainName').get(campainController.ge
 router.route('/add-person-to-campain').post(campainController.addPersonToCampaign)
 router.route('/add-people-to-campain').post(campainController.addPeopleToCampain)
 router.route('/get-commitment-in-campain/:campainName').get(campainController.getCommitmentInCampain)
+router.route('/get-campain-by-name/:campainName').get(campainController.getCampainByName)
+router.route('/get-all-memorial-dates/:CampainName').get(campainController.getAllMemorialDates)
 module.exports = router

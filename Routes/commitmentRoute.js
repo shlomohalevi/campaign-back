@@ -11,6 +11,9 @@ router.route('/delete-commitment/:commitmentId').delete(commitmentController.del
 router.route('/delete-payment/:paymentId').delete(commitmentController.deletePayment)
 router.route('/update-commitment-details/:commitmentId').post(commitmentController.updateCommitmentDetails);
 router.route('/upload-commitment-payment').post(commitmentController.uploadCommitmentPayment);
+router.route('/add-memorial-day').post(commitmentController.AddMemorialDayToPerson);
+router.route('/get-eligible-people/:campainName').get(commitmentController.GetEligblePeopleToMemmorialDay);
+router.route('/delete-memorial-day').delete(commitmentController.DeleteMemorialDay);
 
 
 

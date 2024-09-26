@@ -6,7 +6,6 @@ const peopleModel = require('../Models/peopleModel')
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
   const people = req.body;
-  console.log(people);
 
   for (const person of people) {
       await peopleModel.findOneAndUpdate(
@@ -23,7 +22,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 });
 exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
   const peopleArray = req.body;
-  console.log(peopleArray);
 
   const statusCounts = {
     exists: 0,
@@ -127,7 +125,6 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
 
 exports.getUserDetails = asyncHandler(async (req, res, next) => {
     const AnashIdentifier = req.params.AnashIdentifier // Trim any whitespace
-    console.log(AnashIdentifier);
     
     const userDetails = await peopleModel.findOne({AnashIdentifier: AnashIdentifier});
     

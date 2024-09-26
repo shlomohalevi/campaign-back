@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const commitmentsModel = require('../models/commitmentsModel');
+const campainModel = require('../models/campaignModel');
 const paymentModel = require('../models/paymentModel');
 const People = require('../Models/peopleModel')
 const AppError = require('../utils/AppError');
@@ -103,8 +104,8 @@ function translateErrorToHebrew(errorMessage) {
 
 
 exports.getCommitment = asyncHandler(async (req, res, next) => {
-    const commitment = await commitmentsModel.find().
-        select('AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser');
+    const commitment = await commitmentsModel.find()
+        // select('AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser');
     res.status(200).json({
         status: 'success',
         data: {
@@ -332,6 +333,116 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
     }
 });
 
+
+exports.AddMemorialDayToPerson = asyncHandler(async (req, res, next) => {
+    const { AnashIdentifier,CampainName, MemorialDay } = req.body;
+    const commitment = await commitmentsModel.findOne({ AnashIdentifier: AnashIdentifier, CampainName: CampainName });
+    if (!commitment) {
+        return next(new AppError('Commitment not found', 404));
+    }
+    const campain = await campainModel.findOne({ CampainName: CampainName });
+    if (!campain) {
+        return next(new AppError('Campain not found', 404));
+    }
+    const isEnoughMoney = Math.floor(commitment.CommitmentAmount/campain.minimumAmountForMemorialDay)-commitment.MemorialDays.length;
+    if (isEnoughMoney <= 0) {
+        return next(new AppError('Not enough money', 404));
+    }
+    const existingMemorialDayIndex = commitment.MemorialDays.findIndex(md => isTheSameDate(new Date(md.date), new Date(MemorialDay.date)));
+    if (existingMemorialDayIndex !== -1) {
+        // If the date exists, override it
+        commitment.MemorialDays[existingMemorialDayIndex] = MemorialDay;
+    } else {
+        // If the date does not exist, add it to the array
+        commitment.MemorialDays.push(MemorialDay);
+    }
+
+    const updatedCommitment = await commitment.save();
+
+
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            updatedCommitment
+            
+        }
+    })
+})
+
+exports.GetEligblePeopleToMemmorialDay = asyncHandler(async (req, res, next) => {
+    const {campainName } = req.params;
+    const campain = await campainModel.findOne({ CampainName: campainName });
+    if (!campain) {
+        return next(new AppError('Campain not found', 404));
+    }
+    const commitments = await commitmentsModel.find({ CampainName: campainName }).populate('person');
+    // console.log(commitments);
+       
+    if (!commitments || commitments.length === 0) {
+        return next(new AppError('Commitments not found', 404));
+    }
+    let people = [];
+
+    commitments.forEach(commitment => {
+        const remainingMemorialDays = Math.floor(commitment.CommitmentAmount/ campain.minimumAmountForMemorialDay) - commitment.MemorialDays.length;
+        // If the remainingMemorialDays is enough, add the person associated with the commitment
+        if (remainingMemorialDays > 0) {
+            people.push(commitment.person);  // This is the person associated with the commitment
+        }
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            people
+        }
+    })
+})
+
+
+exports.DeleteMemorialDay = asyncHandler(async (req, res, next) => {
+    const { AnashIdentifier,CampainName, date } = req.query;
+    const commitment = await commitmentsModel.findOne({ AnashIdentifier: AnashIdentifier, CampainName: CampainName });
+    if (!commitment) {
+        return next(new AppError('Commitment not found', 404));
+    }
+    let updatedMemorialDays = commitment.MemorialDays
+    updatedMemorialDays = commitment.MemorialDays.filter((day)=>
+    {
+        return !isTheSameDate(new Date(day.date), new Date(date))
+
+    }
+        
+    
+    );
+    console.log(updatedMemorialDays.length);
+    console.log(commitment.MemorialDays.length);
+    
+    if(updatedMemorialDays.length===commitment.MemorialDays.length)
+        {
+            
+            return next(new AppError('Date not found', 404));
+        }
+        commitment.MemorialDays = updatedMemorialDays;
+        const updatedCommitment = await commitment.save();
+    res.status(200).json({
+        status: 'success',
+        data: {
+            updatedCommitment
+            
+        }
+    })
+})
+function isTheSameDate(date1, date2) {
+    console.log(date1, date2);
+    return (date1.getFullYear() === date2.getFullYear() &&
+            date1.getMonth() === date2.getMonth() &&
+            date1.getDate() === date2.getDate());
+  }
+
+
+  
 
 
 
