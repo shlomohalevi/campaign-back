@@ -59,7 +59,7 @@ const commitmentSchema = new mongoose.Schema({
   MemorialDays: [{
     date: { type: Date, required: true }, // Property 1
     hebrewDate: { type: String, required: true }, // Property 2
-    Commeration: { type: String } // Property 3
+    Commeration: { type: String,default: '' } // Property 3
   }],
   CampainName: {
     type: String,
@@ -72,6 +72,15 @@ commitmentSchema.index(
   { AnashIdentifier: 1, CampainName: 1 },
   { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
 );
+commitmentSchema.virtual('person', {
+  ref: 'People',  // The model to use for population
+  localField: 'AnashIdentifier',  // The field in commitments schema
+  foreignField: 'AnashIdentifier',  // The field in People schema
+  justOne: true  // If you expect only one related document
+});
+commitmentSchema.set('toObject', { virtuals: true });
+commitmentSchema.set('toJSON', { virtuals: true });
+
 
 // בדיקה אם המודל כבר קיים כדי למנוע שגיאת OverwriteModelError
 const Commitment = mongoose.models.Commitment || mongoose.model('Commitment', commitmentSchema);
