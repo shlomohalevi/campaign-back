@@ -4,7 +4,7 @@ const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const peopleSchema = new mongoose.Schema({
   AnashIdentifier: {
-    type: Number,
+    type: String,
     required: [true, 'People Identifier is required'],
     unique: true
   },
@@ -82,7 +82,6 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: '',
     unique: true,
-    required: [true, 'PersonID is required'],
   },
   Classification: {
     type: String,

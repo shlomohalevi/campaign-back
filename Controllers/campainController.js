@@ -197,6 +197,45 @@ exports.getCommitmentInCampain = asyncHandler(async (req, res, next) => {
     });
 });
 
+exports.getCampainByName = asyncHandler(async (req, res, next) => {
+    console.log('e');
+    const campainName = req.params.campainName;
+    const campain = await campainModel.findOne({ CampainName: campainName });
+    if (!campain) {
+        return next(new AppError(404, 'Campain not found'));
+    }
+    res.status(200).json({
+        status: 'success',
+        data: {
+            campain
+        }
+    });
+});
+
+exports.getAllMemorialDates = asyncHandler(async (req, res, next) => {
+    const campainName = req.params.CampainName;
+    console.log(req.params);
+    const campain = await campainModel.findOne({ CampainName: campainName });
+    if (!campain) {
+        return next(new AppError(404, 'Campain not found'));
+    }
+    const campainCommitments = await commitmentModel2.find({ CampainName: campainName });
+    const memorialDates = campainCommitments.flatMap(commitment => {
+        // Assuming each commitment has a `memorialDates` array
+        return commitment.MemorialDays.map(dateObject => dateObject.date); // Adjust this line based on your data structure
+    });
+    if(memorialDates.length === 0){
+        return next(new AppError(404, 'No memorial dates found'));
+    }
+        res.status(200).json({
+        status: 'success',
+        data: {
+            memorialDates
+        }
+    });
+});
+
+
 
 
 

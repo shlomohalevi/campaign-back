@@ -62,6 +62,6 @@ campaignSchema.pre('save', async function (next) {
 // Optionally, use AutoIncrement for campaign IDs
 // campaignSchema.plugin(AutoIncrement, { inc_field: 'CampaignID', startAt: 1, incrementBy: 1 });
 
-const Campaign = mongoose.model('Campaign', campaignSchema);
+const Campaign = mongoose.models.Campaign || mongoose.model('Campaign', campaignSchema);
 
 module.exports = Campaign;
