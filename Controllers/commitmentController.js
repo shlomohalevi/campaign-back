@@ -3,6 +3,7 @@ const commitmentsModel = require('../models/commitmentsModel');
 const campainModel = require('../models/campaignModel');
 const paymentModel = require('../models/paymentModel');
 const People = require('../Models/peopleModel')
+const pettyCash = require('../models/pettyCashModel');
 const AppError = require('../utils/AppError');
 
 
@@ -160,9 +161,10 @@ exports.uploadCommitmentPayment = async (req, res, next) => {
     if (!person) {
         return res.status(404).json({ message: `מזהה אנ"ש ${AnashIdentifier} לא קיים במערכת` });  // Explicitly return 404 for not found
     }
+    let commitment = null
     try {
         const commitmentId = paymentsData.CommitmentId;
-        const commitment = await commitmentsModel.findById(commitmentId);
+        commitment = await commitmentsModel.findById(commitmentId);
         if (!commitment) {
             return res.status(404).json({ message: 'התחייבות לא נמצאה' });  // Explicitly return 404 for not found
         }
@@ -179,6 +181,16 @@ exports.uploadCommitmentPayment = async (req, res, next) => {
 
         const payment = await paymentModel.create(paymentsData);
         if (payment) {
+            if(payment.PaymentMethod == 'מזומן'){
+                console.log(payment)
+                const fullName = `${commitment.FirstName} ${commitment.LastName}`;
+                const {Amount, AnashIdentifier, Date} = payment;
+                const Type = 'הכנסה'
+                const Transaction = {FullNameOrReasonForIssue: fullName, AnashIdentifier: AnashIdentifier, Amount: Amount, TransactionDate: Date, TransactionType: Type};
+                const CreatedTransaction = await pettyCash.create(Transaction);
+                console.log(CreatedTransaction);
+                
+            }
             return res.status(200).json({
                 message: 'התשלום נוסף בהצלחה',
 

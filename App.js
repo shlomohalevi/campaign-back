@@ -5,7 +5,9 @@ const cors = require('cors')
 const uploadsRouter = require('./Routes/uploadRouts')
 const commitmentRoute = require('./Routes/commitmentRoute')
 const campainRoute = require('./Routes/campainsRoute')
+const transactionRoute = require('./Routes/transactionRoute')
 const globalErrorHandler = require('./utils/GlobalErrorHandler')
+
 
 
 require('dotenv').config();
@@ -23,6 +25,7 @@ app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
 app.use('/api/payment', commitmentRoute);
 app.use('/api/campain', campainRoute);
+app.use('/api/transaction', transactionRoute);
 
 
 const port = 4000;
