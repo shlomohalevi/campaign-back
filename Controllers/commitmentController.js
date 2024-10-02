@@ -182,14 +182,11 @@ exports.uploadCommitmentPayment = async (req, res, next) => {
         const payment = await paymentModel.create(paymentsData);
         if (payment) {
             if(payment.PaymentMethod == 'מזומן'){
-                console.log(payment)
                 const fullName = `${commitment.FirstName} ${commitment.LastName}`;
                 const {Amount, AnashIdentifier, Date} = payment;
                 const Type = 'הכנסה'
                 const Transaction = {FullNameOrReasonForIssue: fullName, AnashIdentifier: AnashIdentifier, Amount: Amount, TransactionDate: Date, TransactionType: Type};
-                const CreatedTransaction = await pettyCash.create(Transaction);
-                console.log(CreatedTransaction);
-                
+                const CreatedTransaction = await pettyCash.create(Transaction);               
             }
             return res.status(200).json({
                 message: 'התשלום נוסף בהצלחה',
@@ -297,7 +294,17 @@ exports.deletePayment = asyncHandler(async (req, res, next) => {
     commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
 
     const updatedCommitment = await commitment.save();
+    // if(payment.PaymentMethod == 'מזומן'){
+    //     const fullName = `${commitment.FirstName} ${commitment.LastName}`;
+    //     const {Amount, AnashIdentifier, Date} = payment;
+    //     const Type = 'הכנסה'
+    //     const Transaction = {FullNameOrReasonForIssue: fullName, AnashIdentifier: AnashIdentifier, Amount: Amount, TransactionDate: Date, TransactionType: Type};
+    //     console.log(Transaction);
+        
+    //     //const CreatedTransaction = await pettyCash.create(Transaction);               
+    // }
 
+    
     res.status(200).json({
         status: 'success',
         data: {
