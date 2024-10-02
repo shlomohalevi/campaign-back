@@ -8,7 +8,6 @@ const pettyCashSchema = new mongoose.Schema({
   AnashIdentifier: {
     type: String,
     ref: 'People',
-    required: [true, 'Identity Number is required']
   },
   TransactionType: {
     type: String,
