@@ -7,7 +7,8 @@ const commitmentRoute = require('./Routes/commitmentRoute')
 const campainRoute = require('./Routes/campainsRoute')
 const transactionRoute = require('./Routes/transactionRoute')
 const globalErrorHandler = require('./utils/GlobalErrorHandler')
-
+const authRoute = require('./Routes/AuthRoute')
+const cookieParser = require("cookie-parser");
 
 
 require('dotenv').config();
@@ -21,11 +22,14 @@ app.use(cors(corsOptions))
 // const globalErrorHandler = require('./utils/errorHandler')
 // const cookieParser = require('cookie-parser');
 app.use(express.json())
+app.use(cookieParser())
+
 app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
 app.use('/api/payment', commitmentRoute);
 app.use('/api/campain', campainRoute);
 app.use('/api/transaction', transactionRoute);
+app.use('/api/auth', authRoute);
 
 
 const port = 4000;
