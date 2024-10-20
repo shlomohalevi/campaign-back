@@ -18,7 +18,7 @@ const peopleSchema = new mongoose.Schema({
     default: '',
     required: [true, 'Last Name is required']
   },
-  address: {
+  Address: {
     type: String,
     default: ''
   },
