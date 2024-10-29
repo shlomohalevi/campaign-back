@@ -131,6 +131,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
     if (!currentUser) {
         return next(new AppError(401, 'The user belonging to this token does no longer exist.'));
     }
+    // console.log('decoded');
 
     // Attach the current user to the request object
     req.user = currentUser;
