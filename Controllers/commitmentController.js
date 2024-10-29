@@ -6,6 +6,9 @@ const People = require('../Models/peopleModel')
 const pettyCash = require('../models/pettyCashModel');
 const AppError = require('../utils/AppError');
 
+const {recordNewCommitmentOperation, recordNewPaymentOperation, recordDeleteOperation, recordEditOperation} = require('../utils/RecordOperation')
+
+
 
 exports.uploadCommitment = asyncHandler(async (req, res, next) => {
     let data = req.body;
@@ -63,13 +66,12 @@ exports.uploadCommitment = asyncHandler(async (req, res, next) => {
         try {
             await commitmentsModel.create({ ...commitment });
             successfulUploads += 1;
-            console.log(personDetails);
             personDetails.Campaigns.push(commitment.CampainName);
-            console.log(personDetails, 'a');
+            const recordOperation = recordNewCommitmentOperation({ Date: new Date(), OperationType: 'הוספת התחייבות',
+                 UserFullName: req.user.FullName, NewValue: `התחייבות חדשה ${commitment.CommitmentAmount} ש"ח` })
+            personDetails.Operations.push(recordOperation)
             
             const updatedPerson = await personDetails.save();
-            console.log('b');
-            console.log(updatedPerson, 'w');
         } catch (error) {
             console.log(error);
             failedUploads.push({
@@ -149,7 +151,6 @@ exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
 
 
 exports.uploadCommitmentPayment = async (req, res, next) => {
-    // נבדוק אם הנתונים הם אובייקט יחיד או מערך
     const paymentsData = req.body;
 
     const AnashIdentifier = paymentsData.AnashIdentifier;
@@ -188,11 +189,17 @@ exports.uploadCommitmentPayment = async (req, res, next) => {
                 const Transaction = {FullNameOrReasonForIssue: fullName, AnashIdentifier: AnashIdentifier, Amount: Amount, TransactionDate: Date, TransactionType: Type};
                 const CreatedTransaction = await pettyCash.create(Transaction);               
             }
+            const recordOperation = recordNewPaymentOperation({ Date: new Date(), OperationType: 'הוספת תשלום', 
+                UserFullName: req.user.FullName, NewValue: `תשלום באמצעות: ${paymentsData.PaymentMethod} סכום תשלום: ${paymentsData.Amount} ש"ח` })
+                if(recordOperation){
+                    person.Operations.push(recordOperation)
+                    const updatedPerson = await person.save();
+                    
+                }
             return res.status(200).json({
                 message: 'התשלום נוסף בהצלחה',
 
             });
-            // return  res.status(404).json({ message: 'לא ניתן להוסיף את התשלום' });  // Explicitly return 404 for not found
         }
     }
     catch (error) {
@@ -254,6 +261,19 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     else
     {
         const deletedPayments = await paymentModel.deleteMany({ CommitmentId: commitmentId });
+        const user = await People.findOne({ AnashIdentifier: deltedCommitment.AnashIdentifier });
+        if(user){
+            const recordOperation = recordDeleteOperation({ Date: new Date(), OperationType: 'מחיקת התחייבות', 
+                UserFullName: req.user.fullName, OldValue: `commitment amount ${deltedCommitment.CommitmentAmount}` })
+            if(deletedPayments?.count > 0){
+
+                recordOperation.OldValue += ` מספר תשלומים שנמחקו: ${deltedCommitment.PaymentsMade} בסך כולל של סכום: ${deltedCommitment.AmountPaid} ש"ח`
+            }
+            if(recordOperation){
+                user.Operations.push(recordOperation)
+                const updatedUser = await user.save();
+            }
+        }
     }
 
     res.status(200).json({
@@ -268,7 +288,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
 exports.deletePayment = asyncHandler(async (req, res, next) => {
     const paymentId = req.params.paymentId;
     
-    // חפש את התשלום כדי לדעת אילו פרטי התחייבות יש לעדכן
     const payment = await paymentModel.findById(paymentId);
     if (!payment) {
         return next(new AppError('Payment not found', 404));
@@ -278,9 +297,6 @@ exports.deletePayment = asyncHandler(async (req, res, next) => {
     
     // מחק את התשלום
     const deletedPayment = await paymentModel.findByIdAndDelete(paymentId);
-    if (!deletedPayment) {
-        return next(new AppError('Payment not found', 404));
-    }
 
     // עדכן את ההתחייבות
     const commitment = await commitmentsModel.findById(commitmentId);
@@ -294,15 +310,14 @@ exports.deletePayment = asyncHandler(async (req, res, next) => {
     commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
 
     const updatedCommitment = await commitment.save();
-    // if(payment.PaymentMethod == 'מזומן'){
-    //     const fullName = `${commitment.FirstName} ${commitment.LastName}`;
-    //     const {Amount, AnashIdentifier, Date} = payment;
-    //     const Type = 'הכנסה'
-    //     const Transaction = {FullNameOrReasonForIssue: fullName, AnashIdentifier: AnashIdentifier, Amount: Amount, TransactionDate: Date, TransactionType: Type};
-    //     console.log(Transaction);
-        
-    //     //const CreatedTransaction = await pettyCash.create(Transaction);               
-    // }
+    if(deletedPayment){
+        const recordOperation = recordDeleteOperation({ Date: new Date(), OperationType: 'מחיקת תשלום', 
+            UserFullName: req.user.fullName, OldValue: `${deletedPayment.Amount} ש"ח` })
+        if(recordOperation){
+            user.Operations.push(recordOperation)
+            const updatedUser = await user.save();
+        }
+    }
 
     
     res.status(200).json({
@@ -315,14 +330,16 @@ exports.deletePayment = asyncHandler(async (req, res, next) => {
 
 
 exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
-    // לוג של הנתונים המתקבלים מהבקשה
-    console.log('Request params ID:', req.params.commitmentId);
-    console.log('Request body:', req.body);
 
     const { commitmentId } = req.params;
     const updatedDetails = req.body;
 
     try {
+        const oldCommitmentDetails = await commitmentsModel.findById(commitmentId);
+        if (!oldCommitmentDetails) {
+            return next(new AppError('Commitment not found', 404));
+        }
+
         const updatedCommitmentDetails = await commitmentsModel.findOneAndUpdate(
             { _id: commitmentId },
             { $set: updatedDetails }, // Only update the fields provided in req.body
@@ -332,11 +349,20 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
             }
         );
 
-        // לוג של התוצאה מהפונקציה findOneAndUpdate
-        console.log('Updated commitment details:', updatedCommitmentDetails);
 
         if (!updatedCommitmentDetails) {
-            return next(new AppError('Commitment not found', 404));
+            return next(new AppError('cannot update', 404));
+        }
+        else{
+            const user = await People.findOne({ AnashIdentifier: updatedCommitmentDetails.AnashIdentifier });
+            if(user){
+                const recordOperation = recordEditOperation({ Date: new Date(), OperationType: 'עדכון פרטי התחייבות', 
+                    UserFullName: req.user.FullName, OldValue: oldCommitmentDetails, NewValue: updatedCommitmentDetails})
+                if(recordOperation){
+                    user.Operations.push(recordOperation)
+                    const updatedUser = await user.save();
+                }
+            }
         }
 
         res.status(200).json({
@@ -346,9 +372,7 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
             }
         });
     } catch (error) {
-        // לוג של השגיאה במידה ויש
-        console.error('Error updating commitment:', error);
-        next(error); // להעביר את השגיאה לפונקציה הבאה בטיפול בשגיאות
+        next(error); 
     }
 });
 
@@ -435,8 +459,6 @@ exports.DeleteMemorialDay = asyncHandler(async (req, res, next) => {
         
     
     );
-    console.log(updatedMemorialDays.length);
-    console.log(commitment.MemorialDays.length);
     
     if(updatedMemorialDays.length===commitment.MemorialDays.length)
         {

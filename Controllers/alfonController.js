@@ -2,33 +2,60 @@ const asyncHandler = require('express-async-handler')
 const AppError = require('../utils/AppError')
 const mongoose = require('mongoose')
 const peopleModel = require('../Models/peopleModel')
+const {recordDeleteOperation, recordEditOperation} = require('../utils/RecordOperation')
 
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
   let people = req.body;
   let errorUploads = [];
-  let succesCount = 0;
-  for (const person of people) {
-    const doc =  await peopleModel.findOneAndUpdate(
-          { AnashIdentifier: person.AnashIdentifier },  // search criteria
-          { $set: person },  // only update the fields provided in `person`
-          { upsert: true, new: true }  // options: create if not exists, return the updated document
-      );
+  let successCount = 0;
+  let newDocCount = 0;
+  let updatedDocCount = 0;
 
-    if (!doc) {
+  for (const person of people) {
+    const existingPerson = await peopleModel.findOne( { AnashIdentifier: person.AnashIdentifier } );
+    
+    if (existingPerson) {
+      try {
+      await peopleModel.findOneAndUpdate(
+        { AnashIdentifier: person.AnashIdentifier },
+        { $set: person },
+        { new: true}
+      );
+      updatedDocCount += 1;
+      successCount += 1;  // Count as an update
+    } catch (error) {
       errorUploads.push(person);
+      console.log(error);
     }
+
+      }
+      
     else {
-      succesCount += 1;
+      try
+      {
+
+        await peopleModel.create(person);
+        newDocCount += 1;
+        successCount += 1;  
+      }
+      catch (error) {
+        errorUploads.push(person);
+        console.log(error);
+      }
     }
+
+  
+
   }
 
   res.status(200).json({
-      status: 'success',
-      people,
-      errorUploads,
-      succesCount: succesCount
-      
+    status: 'success',
+    people,
+    errorUploads,
+    successCount,
+    newDocCount,
+    updatedDocCount
   });
 });
 
@@ -67,7 +94,7 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
     const existingPerson = await peopleModel.findOne({ AnashIdentifier: person.AnashIdentifier });
 
     if (existingPerson) {
-      console.log( 'e');
+      console.log( existingPerson );
       const existingPersonObj = existingPerson.toObject();
 
       const mismatchedKeys = Object.keys(person).filter(key =>
@@ -172,17 +199,37 @@ exports.updateUserDetails = asyncHandler(async (req, res, next) => {
     const userDetails = await peopleModel.findOne({AnashIdentifier: AnashIdentifier});
     if (!userDetails) {
         return next(new AppError('User not found', 404));
-    }
-
-    const updatedUserDetails = await peopleModel.findOneAndUpdate(
-        { AnashIdentifier: AnashIdentifier },
-        { $set:updatedDetails}, // Only update the fields provided in req.body
-        {
-            new: true, // Return the updated document
-            runValidators: true, // Ensure schema validation is applied
-        }
+      }
+      // console.log(req.user);
+      const recordedOperation =  recordEditOperation({
+          
+          
+              UserFullName: req.user?.FullName,
+              Date: new Date(),
+              OperationType: 'עריכת פרטי משתמש',
+              OldValue: userDetails,
+              NewValue: updatedDetails}
+      
     );
-        res.status(200).json({
+
+
+      const update = { $set: updatedDetails };
+
+      // Only add the operation if it's not null
+      if (recordedOperation) {
+          update.$push = { Operations: recordedOperation };
+      }
+      // console.log(recordedOperation);
+  
+      const updatedUserDetails = await peopleModel.findOneAndUpdate(
+          { AnashIdentifier: AnashIdentifier },
+          update,
+          {
+              new: true, // Return the updated document
+              runValidators: true, // Ensure schema validation is applied
+          }
+      );
+          res.status(200).json({
         status: 'success',
         data: {
             updatedUserDetails
@@ -191,9 +238,21 @@ exports.updateUserDetails = asyncHandler(async (req, res, next) => {
 });
 exports.deleteUser = asyncHandler(async (req, res, next) => {
     const AnashIdentifier = req.params.AnashIdentifier
-    const deletedUser = await peopleModel.findOneAndDelete({AnashIdentifier: AnashIdentifier});
+    const deletedUser = await peopleModel.findOneAndUpdate({AnashIdentifier: AnashIdentifier, isActive: true}, {isActive: false}, {new: true});
     if (!deletedUser) {
         return next(new AppError('User not found', 404));
+    }
+    const recordedOperation =  recordDeleteOperation({
+
+        UserFullName: req.user?.FullName,
+        Date: new Date(),
+        OperationType: 'delete',
+        
+    })
+
+    if (recordedOperation) {
+        deletedUser.Operations.push(recordedOperation);
+        await deletedUser.save();
     }
     res.status(200).json({
         status: 'success',
@@ -217,3 +276,5 @@ exports.addPerson = asyncHandler(async (req, res, next) => {
         }
     })
 })
+
+
