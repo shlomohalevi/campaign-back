@@ -164,7 +164,6 @@ exports.addPeopleToCampain = asyncHandler(async (req, res, next) => {
 
 exports.getCommitmentInCampain = asyncHandler(async (req, res, next) => {
     const campainName = req.params.campainName;
-    console.log(campainName);
     if (!campainName) {
         return next(new AppError(404, 'campainId not defined'));
     }
@@ -198,7 +197,6 @@ exports.getCommitmentInCampain = asyncHandler(async (req, res, next) => {
 });
 
 exports.getCampainByName = asyncHandler(async (req, res, next) => {
-    console.log('e');
     const campainName = req.params.campainName;
     const campain = await campainModel.findOne({ CampainName: campainName });
     if (!campain) {
@@ -214,7 +212,6 @@ exports.getCampainByName = asyncHandler(async (req, res, next) => {
 
 exports.getAllMemorialDates = asyncHandler(async (req, res, next) => {
     const campainName = req.params.CampainName;
-    console.log(req.params);
     const campain = await campainModel.findOne({ CampainName: campainName });
     if (!campain) {
         return next(new AppError(404, 'Campain not found'));

@@ -1,27 +1,29 @@
 const mongoose = require('mongoose');
 
 const pettyCashSchema = new mongoose.Schema({
-  TransactionId: {
+  FullNameOrReasonForIssue: {
     type: String,
-    required: [true, 'Transaction Number is required'],
-    unique: true
-    //ref to transactions
+    required: [true, 'FullNameOrReasonForIssue is required']
+  },
+  AnashIdentifier: {
+    type: String,
+    ref: 'People',
   },
   TransactionType: {
     type: String,
-    enum: ['Income', 'Expense']
-    // required: [true, 'Transaction Type is required']
+    enum: ['הכנסה', 'הוצאה'],
+    required: [true, 'Transaction Type is required']
   },
   Amount: {
     type: Number,
-    // required: [true, 'Amount is required']
+    required: [true, 'Amount is required']
   },
-  FullNameForLists: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'People'
-  }
+  TransactionDate: {
+    type: Date,
+    required: [true, 'TransactionDate is required']
+  },
 });
 
-const PettyCash = mongoose.model('PettyCash', pettyCashSchema);
+const PettyCash = mongoose.models.PettyCash || mongoose.model('PettyCash', pettyCashSchema);
 
 module.exports = PettyCash;

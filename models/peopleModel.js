@@ -2,6 +2,30 @@ const mongoose = require('mongoose');
 const { schema } = require('./transactionsModel');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
+const operetionsSchema = new mongoose.Schema({
+  Date: {
+    type: Date,
+    required: [true, 'Date is required']
+  },
+  OperationType: {
+    type: String,
+    required: [true, 'Operation Type is required']
+  },
+  OldValue: {
+    type: mongoose.Schema.Types.Mixed,
+    default: ''
+  },
+  NewValue: {
+    type: mongoose.Schema.Types.Mixed,
+    default: ''
+  },
+  UserFullName: {
+    type: String,
+    required: [true, 'UserFullName is required'],
+  }
+});
+
+
 const peopleSchema = new mongoose.Schema({
   AnashIdentifier: {
     type: String,
@@ -18,7 +42,7 @@ const peopleSchema = new mongoose.Schema({
     default: '',
     required: [true, 'Last Name is required']
   },
-  address: {
+  Address: {
     type: String,
     default: ''
   },
@@ -140,9 +164,24 @@ const peopleSchema = new mongoose.Schema({
       message: props => `${props.value} כבר קיים במערך הקמפיינים`
     }
 }]
+,
+  Operations: [operetionsSchema]
 
 
 });
+
+peopleSchema.index(
+  { PersonID: 1 },
+  { 
+    unique: true, 
+    partialFilterExpression: { 
+      PersonID: { $exists: true, $ne: '' } 
+    } 
+  }
+);
+
+  
+
 
 
 const People = mongoose.model('People', peopleSchema);
