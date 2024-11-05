@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler')
 const AppError = require('../utils/AppError')
 const mongoose = require('mongoose')
-const peopleModel = require('../Models/peopleModel')
+const peopleModel = require('../models/peopleModel')
 const {recordDeleteOperation, recordEditOperation} = require('../utils/RecordOperation')
 
 
