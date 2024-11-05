@@ -2,7 +2,7 @@ const asyncHandler = require('express-async-handler');
 const commitmentsModel = require('../models/commitmentsModel');
 const campainModel = require('../models/campaignModel');
 const paymentModel = require('../models/paymentModel');
-const People = require('../Models/peopleModel')
+const People = require('../models/peopleModel')
 const pettyCash = require('../models/pettyCashModel');
 const AppError = require('../utils/AppError');
 
