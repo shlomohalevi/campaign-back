@@ -56,6 +56,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 
 
 exports.login = asyncHandler(async (req, res, next) => {
+    console.log(req.body);
     const { username, password } = req.body;
     // console.log(typeof password);
     if (!username || !password) {
@@ -74,7 +75,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     // Set the token as an HTTP-only cookie
     res.cookie('token', token, {
         httpOnly: true,        // Prevents JavaScript access
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',  // Only use secure cookies in production (cloud)
     });
     
     res.status(201).json({
@@ -85,6 +86,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     
 })
 exports.logout = asyncHandler(async (req, res, next) => {
+    console.log(req.cookies);
 
     if (!req.cookies.token) {
         return next(new AppError(401, 'You are not logged in! Please log in to get access.'));
