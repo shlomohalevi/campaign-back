@@ -30,9 +30,12 @@ app.use('/api/payment', commitmentRoute);
 app.use('/api/campain', campainRoute);
 app.use('/api/transaction', transactionRoute);
 app.use('/api/auth', authRoute);
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'success', message: 'Server is active' });
+});
 
 
-const port = 4000;
+const port = process.env.PORT || 4000;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
