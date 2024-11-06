@@ -13,14 +13,13 @@ const cookieParser = require("cookie-parser");
 
 require('dotenv').config();
 const corsOptions = {
-  origin:true,
+  origin: ['http://localhost:5174', 'http://localhost:5173','https://campain-back.onrender.com'],  // Add both dev and prod URLs here
+  
   credentials:true
 }
 app.use(cors(corsOptions))
 
 
-// const globalErrorHandler = require('./utils/errorHandler')
-// const cookieParser = require('cookie-parser');
 app.use(express.json())
 app.use(cookieParser())
 
