@@ -13,7 +13,7 @@ const cookieParser = require("cookie-parser");
 
 require('dotenv').config();
 const corsOptions = {
-  origin: ['http://localhost:5174', 'http://localhost:5173'],  // Add both dev and prod URLs here
+  origin: ['http://localhost:5174', 'http://localhost:5173','https://menegmentapp.netlify.app'],  // Add both dev and prod URLs here
   
   credentials:true
 }
