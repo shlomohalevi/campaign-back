@@ -76,7 +76,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     res.cookie('token', token, {
         httpOnly: true,        // Prevents JavaScript access
         secure: process.env.NODE_ENV === 'production', // Secure only in full HTTPS
-        sameSite: 'none'
+        // sameSite: 'none'
     });
     
     res.status(201).json({
