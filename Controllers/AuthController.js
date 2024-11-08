@@ -73,15 +73,15 @@ exports.login = asyncHandler(async (req, res, next) => {
     const token = generateToken(user._id, user.Username, '3d');
 
     // Set the token as an HTTP-only cookie
-    res.cookie('token', token, {
-        httpOnly: true,        // Prevents JavaScript access
-        secure: process.env.NODE_ENV === 'production', // Secure only in full HTTPS
-        sameSite: 'none'
-    });
+    // res.cookie('token', token, {
+    //     httpOnly: true,        // Prevents JavaScript access
+    //     secure: process.env.NODE_ENV === 'production', // Secure only in full HTTPS
+    // });
     
     res.status(201).json({
         status: 'success',
         message: 'Token set in cookie',
+        token,
         user
     });
     
@@ -105,10 +105,10 @@ exports.logout = asyncHandler(async (req, res, next) => {
 
 exports.protect = asyncHandler(async (req, res, next) => {
     let token;
-    
-    // Check for the token in cookies
-    if (req.cookies.token) {
-        token = req.cookies.token;
+
+    // Check for the token in the Authorization header (Bearer token)
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1]; // Get the token part after "Bearer"
     }
 
     // If no token is found, return an error
@@ -134,7 +134,6 @@ exports.protect = asyncHandler(async (req, res, next) => {
     if (!currentUser) {
         return next(new AppError(401, 'The user belonging to this token does no longer exist.'));
     }
-    // console.log('decoded');
 
     // Attach the current user to the request object
     req.user = currentUser;
