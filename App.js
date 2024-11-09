@@ -9,6 +9,7 @@ const transactionRoute = require('./Routes/transactionRoute')
 const globalErrorHandler = require('./utils/GlobalErrorHandler')
 const authRoute = require('./Routes/AuthRoute')
 const cookieParser = require("cookie-parser");
+const helmet = require('helmet');
 
 
 require('dotenv').config();
@@ -18,11 +19,11 @@ const corsOptions = {
   credentials:true
 }
 app.use(cors(corsOptions))
+app.use(helmet());
 
 
 app.use(express.json())
 app.use(cookieParser())
-app.set("trust proxy", 1);
 
 app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
@@ -60,7 +61,7 @@ const connectDB = async (url)=>{
   }
   
 }
-connectDB(process.env.MONGO_ATLAS)
+connectDB(process.env.DB)
 .then(()=>{
   console.log("The data base has been connected");
 })
