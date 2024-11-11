@@ -167,16 +167,24 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
   
   
   
-  exports.getPeople = asyncHandler(async (req, res, next) => {
-    const people = await peopleModel.find().
-    select('AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
-    res.status(200).json({
-        status: 'success',
-        data: {
-            people
-        }
-    })
-})
+exports.getPeople = asyncHandler(async (req, res, next) => {
+  // Destructure isActive from the query or set it to null if not provided
+  const { isActive } = req.query;
+
+  // If isActive is not provided, find both active and inactive people
+  const query = isActive !== undefined ? { isActive: isActive } : {};
+  console.log(query);
+
+  const people = await peopleModel.find(query)
+      .select('AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
+console.log(people)
+  res.status(200).json({
+      status: 'success',
+      data: {
+          people
+      }
+  });
+});
 
 exports.getUserDetails = asyncHandler(async (req, res, next) => {
     const AnashIdentifier = req.params.AnashIdentifier // Trim any whitespace
