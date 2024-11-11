@@ -21,7 +21,7 @@ const managerSchema = new mongoose.Schema({
     required: [true, 'Password is required']
   },
   Role: {
-    type:String, enum: ['Admin', 'User'], message: "The value must be user or admin", default: 'User',
+    type:String, enum: ['Admin', 'User','Guest'], message: "The value must be user or admin", default: 'User',
     required: [true, 'Permission Type is required']
   },
   resetPasswordToken: { type: String },
