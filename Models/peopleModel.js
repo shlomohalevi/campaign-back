@@ -106,7 +106,6 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: '',
     
-    unique: true,
   },
   Classification: {
     type: String,
