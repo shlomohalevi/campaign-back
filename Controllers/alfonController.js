@@ -12,52 +12,99 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
   let newDocCount = 0;
   let updatedDocCount = 0;
 
-  for (const person of people) {
-    const existingPerson = await peopleModel.findOne( { AnashIdentifier: person.AnashIdentifier } );
-    
-    if (existingPerson) {
-      try {
-      await peopleModel.findOneAndUpdate(
-        { AnashIdentifier: person.AnashIdentifier },
-        { $set: person },
-        { new: true}
-      );
-      updatedDocCount += 1;
-      successCount += 1;  // Count as an update
-    } catch (error) {
-      errorUploads.push(person);
-      console.log(error);
+  // Separate the people into update and insert operations
+  const bulkOps = people.map((person) => ({
+    updateOne: {
+      filter: { AnashIdentifier: person.AnashIdentifier },
+      update: { $set: person },
+      upsert: true, // If it doesn't exist, create a new document
+    },
+  }));
+
+  try {
+    const result = await peopleModel.bulkWrite(bulkOps, { ordered: false });
+
+    // Count results
+    newDocCount = result.upsertedCount;
+    updatedDocCount = result.modifiedCount;
+    successCount = newDocCount + updatedDocCount;
+    if (result.hasWriteErrors()) {
+      // Use getWriteErrors to retrieve each error and get the index of failed operations
+      errorUploads = result.getWriteErrors().map(err => people[err.index]);
     }
-
-      }
-      
-    else {
-      try
-      {
-
-        await peopleModel.create(person);
-        newDocCount += 1;
-        successCount += 1;  
-      }
-      catch (error) {
-        errorUploads.push(person);
-        console.log(error);
-      }
-    }
-
   
-
+    
+  } 
+  
+  catch (error) {
+    // Log and collect errors (if `ordered: false`, errors won't stop the execution)
+    console.log(error);
+    errorUploads = people; // If bulkWrite fails entirely, log all as failed
   }
 
   res.status(200).json({
     status: 'success',
-    people,
     errorUploads,
     successCount,
     newDocCount,
-    updatedDocCount
+    updatedDocCount,
   });
 });
+
+
+// exports.uploadPeople = asyncHandler(async (req, res, next) => {
+//   let people = req.body;
+//   let errorUploads = [];
+//   let successCount = 0;
+//   let newDocCount = 0;
+//   let updatedDocCount = 0;
+
+//   for (const person of people) {
+//     const existingPerson = await peopleModel.findOne( { AnashIdentifier: person.AnashIdentifier } );
+    
+//     if (existingPerson) {
+//       try {
+//       await peopleModel.findOneAndUpdate(
+//         { AnashIdentifier: person.AnashIdentifier },
+//         { $set: person },
+//         { new: true}
+//       );
+//       updatedDocCount += 1;
+//       successCount += 1;  // Count as an update
+//     } catch (error) {
+//       errorUploads.push(person);
+//       console.log(error);
+//     }
+
+//       }
+      
+//     else {
+//       try
+//       {
+
+//         await peopleModel.create(person);
+//         newDocCount += 1;
+//         successCount += 1;  
+//       }
+//       catch (error) {
+//         errorUploads.push(person);
+//         console.log(error);
+//       }
+//     }
+
+  
+
+//   }
+
+//   res.status(200).json({
+//     status: 'success',
+//     people,
+//     errorUploads,
+//     successCount,
+//     newDocCount,
+//     updatedDocCount
+//   });
+// });
 
 function isValidUser(person) {
   if(!person?.AnashIdentifier || !person?.FirstName || !person?.LastName) {
