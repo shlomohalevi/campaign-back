@@ -7,6 +7,9 @@ const {recordDeleteOperation, recordEditOperation} = require('../utils/RecordOpe
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
   let people = req.body;
+  // console.log('people');
+  // console.log(people);
+  
   let errorUploads = [];
   let successCount = 0;
   let newDocCount = 0;
@@ -20,7 +23,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
       upsert: true, // If it doesn't exist, create a new document
     },
   }));
-
   try {
     const result = await peopleModel.bulkWrite(bulkOps, { ordered: false });
 
@@ -31,6 +33,7 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
     if (result.hasWriteErrors()) {
       // Use getWriteErrors to retrieve each error and get the index of failed operations
       errorUploads = result.getWriteErrors().map(err => people[err.index]);
+
     }
   
     
@@ -137,6 +140,7 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
     return rest;
   };
 
+
   // Step 1: Create a list of all AnashIdentifiers
   const anashIdentifiers = peopleArray.map(person => person.AnashIdentifier);
 
@@ -174,7 +178,6 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
       );
 
       const isIdentical = mismatchedKeys.length === 0 && extraKeys.length === 0;
-
       if (isIdentical) {
         statusCounts.exists += 1;
       } else {
