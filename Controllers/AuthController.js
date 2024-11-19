@@ -146,7 +146,7 @@ exports.restrictTo = (roles) => {
         // console.log(roles);
         // console.log(req.user);
         if (!roles.includes(req.user.Role)) {
-             throw new AppError(403, 'You do not have permission to perform this action');
+            return next(new AppError(403, 'You do not have permission to perform this action'));
         }
         next();
     }

@@ -221,9 +221,9 @@ exports.getAllMemorialDates = asyncHandler(async (req, res, next) => {
         // Assuming each commitment has a `memorialDates` array
         return commitment.MemorialDays.map(dateObject => dateObject.date); // Adjust this line based on your data structure
     });
-    if(memorialDates.length === 0){
-        return next(new AppError(404, 'No memorial dates found'));
-    }
+    // if(memorialDates.length === 0){
+    //     return next(new AppError(404, 'No memorial dates found'));
+    // }
         res.status(200).json({
         status: 'success',
         data: {
