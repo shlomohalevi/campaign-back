@@ -142,11 +142,11 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
 
 exports.restrictTo = (roles) => {
-    // console.log(roles);
     return (req, res, next) => {
-        console.log(req.user);
+        // console.log(roles);
+        // console.log(req.user);
         if (!roles.includes(req.user.Role)) {
-            return next(new AppError('You do not have permission to perform this action', 403));
+            return next(new AppError(403, 'You do not have permission to perform this action'));
         }
         next();
     }

@@ -105,7 +105,7 @@ const peopleSchema = new mongoose.Schema({
   PersonID: {
     type: String,
     default: '',
-    unique: true,
+    
   },
   Classification: {
     type: String,
@@ -119,11 +119,17 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  Email: {
+    isActive: {
+      type: Boolean,
+      default: true,
+      set: function(v) {
+        // If the value is null, undefined, or an empty string, set it to true
+        return v === null || v === undefined || v === '' ? true : v;
+      },
+    },
+    // other fields...
+  
+    Email: {
     type: String,
     default: ''
   },
@@ -166,6 +172,11 @@ const peopleSchema = new mongoose.Schema({
 }]
 ,
   Operations: [operetionsSchema]
+  ,
+  Rank: {
+    type: String,
+    default: ''
+  }
 
 
 });
@@ -173,10 +184,11 @@ const peopleSchema = new mongoose.Schema({
 peopleSchema.index(
   { PersonID: 1 },
   { 
-    unique: true, 
+    unique: true, // Enforce uniqueness
     partialFilterExpression: { 
-      PersonID: { $exists: true, $ne: '' } 
-    } 
+      PersonID: { $ne: null },  // Exclude null values
+      PersonID: { $ne: "" }     // Exclude empty strings
+    }
   }
 );
 

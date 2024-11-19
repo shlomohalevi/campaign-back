@@ -15,54 +15,99 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
   let newDocCount = 0;
   let updatedDocCount = 0;
 
-  for (const person of people) {
-    const existingPerson = await peopleModel.findOne( { AnashIdentifier: person.AnashIdentifier } );
-    
-    if (existingPerson) {
-      try {
-      await peopleModel.findOneAndUpdate(
-        { AnashIdentifier: person.AnashIdentifier },
-        { $set: person },
-        { new: true}
-      );
-      updatedDocCount += 1;
-      successCount += 1;  // Count as an update
-    } catch (error) {
-      errorUploads.push(person);
-      console.log(error);
-    }
+  // Separate the people into update and insert operations
+  const bulkOps = people.map((person) => ({
+    updateOne: {
+      filter: { AnashIdentifier: person.AnashIdentifier },
+      update: { $set: person },
+      upsert: true, // If it doesn't exist, create a new document
+    },
+  }));
+  try {
+    const result = await peopleModel.bulkWrite(bulkOps, { ordered: false });
 
-      }
-      
-    else {
-      try
-      {
-        console.log('create person');
-        console.log(person);
-        await peopleModel.create(person);
-        newDocCount += 1;
-        successCount += 1;  
-      }
-      catch (error) {
-        errorUploads.push(person);
-        console.log('error');
-        console.log(error);
-      }
-    }
+    // Count results
+    newDocCount = result.upsertedCount;
+    updatedDocCount = result.modifiedCount;
+    successCount = newDocCount + updatedDocCount;
+    if (result.hasWriteErrors()) {
+      // Use getWriteErrors to retrieve each error and get the index of failed operations
+      errorUploads = result.getWriteErrors().map(err => people[err.index]);
 
+    }
   
-
+    
+  } 
+  
+  catch (error) {
+    // Log and collect errors (if `ordered: false`, errors won't stop the execution)
+    console.log(error);
+    errorUploads = people; // If bulkWrite fails entirely, log all as failed
   }
 
   res.status(200).json({
     status: 'success',
-    people,
     errorUploads,
     successCount,
     newDocCount,
-    updatedDocCount
+    updatedDocCount,
   });
 });
+
+
+// exports.uploadPeople = asyncHandler(async (req, res, next) => {
+//   let people = req.body;
+//   let errorUploads = [];
+//   let successCount = 0;
+//   let newDocCount = 0;
+//   let updatedDocCount = 0;
+
+//   for (const person of people) {
+//     const existingPerson = await peopleModel.findOne( { AnashIdentifier: person.AnashIdentifier } );
+    
+//     if (existingPerson) {
+//       try {
+//       await peopleModel.findOneAndUpdate(
+//         { AnashIdentifier: person.AnashIdentifier },
+//         { $set: person },
+//         { new: true}
+//       );
+//       updatedDocCount += 1;
+//       successCount += 1;  // Count as an update
+//     } catch (error) {
+//       errorUploads.push(person);
+//       console.log(error);
+//     }
+
+//       }
+      
+//     else {
+//       try
+//       {
+
+//         await peopleModel.create(person);
+//         newDocCount += 1;
+//         successCount += 1;  
+//       }
+//       catch (error) {
+//         errorUploads.push(person);
+//         console.log(error);
+//       }
+//     }
+
+  
+
+//   }
+
+//   res.status(200).json({
+//     status: 'success',
+//     people,
+//     errorUploads,
+//     successCount,
+//     newDocCount,
+//     updatedDocCount
+//   });
+// });
 
 function isValidUser(person) {
   if(!person?.AnashIdentifier || !person?.FirstName || !person?.LastName) {
@@ -95,26 +140,35 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
     return rest;
   };
 
-  await Promise.all(peopleArray.map(async (person) => { 
-    const existingPerson = await peopleModel.findOne({ AnashIdentifier: person.AnashIdentifier });
+
+  // Step 1: Create a list of all AnashIdentifiers
+  const anashIdentifiers = peopleArray.map(person => person.AnashIdentifier);
+
+  // Step 2: Fetch all matching people from the database in one query
+  const existingPeople = await peopleModel.find({ AnashIdentifier: { $in: anashIdentifiers } });
+  
+  // Step 3: Create a map from AnashIdentifier to existingPerson
+  const existingPeopleMap = existingPeople.reduce((map, person) => {
+    map[person.AnashIdentifier] = person.toObject();
+    return map;
+  }, {});
+
+  // Step 4: Loop over peopleArray and check against the map
+  peopleArray.forEach(person => {
+    const existingPerson = existingPeopleMap[person.AnashIdentifier];
 
     if (existingPerson) {
-      console.log( 'existingPerson' );
-      console.log( existingPerson );
-      const existingPersonObj = existingPerson.toObject();
-
       const mismatchedKeys = Object.keys(person).filter(key =>
-        person[key] != existingPersonObj[key] &&
-        !(person[key] === '' && (existingPersonObj[key] === null || existingPersonObj[key] === undefined))
+        person[key] != existingPerson[key] &&
+        !(person[key] === '' && (existingPerson[key] === null || existingPerson[key] === undefined))
       );
-      // console.log(mismatchedKeys)
 
-      const extraKeys = Object.keys(existingPersonObj).filter(key =>
+      const extraKeys = Object.keys(existingPerson).filter(key =>
         !person.hasOwnProperty(key) &&
-        existingPersonObj[key] !== '' &&
-        existingPersonObj[key] !== null &&
-        existingPersonObj[key] !== undefined &&
-        !(Array.isArray(existingPersonObj[key])) &&
+        existingPerson[key] !== '' &&
+        existingPerson[key] !== null &&
+        existingPerson[key] !== undefined &&
+        !(Array.isArray(existingPerson[key])) &&
         key !== '_id' &&
         key !== 'PersonID' &&
         key !== '__v' &&
@@ -129,9 +183,8 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
       } else {
         statusCounts.needsUpdate += 1;
 
-        // Create diff object
         const existingDiff = mismatchedKeys.concat(extraKeys).reduce((acc, key) => {
-          acc[key] = existingPersonObj[key];
+          acc[key] = existingPerson[key];
           return acc;
         }, {});
 
@@ -147,25 +200,20 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
           uploadedPerson: uploadedDiff,
         });
 
-        // Push to needsUpdateArray, excluding _id and __v
-        needsUpdateArray.push(removeExcludedFields(existingPersonObj));
+        needsUpdateArray.push(removeExcludedFields(existingPerson));
       }
     } else {
       statusCounts.new += 1;
-      console.log('person');
-      console.log(person);
-      
-      // Push to newArray, excluding _id and __v
       newArray.push(removeExcludedFields(person));
     }
-  }));
+  });
 
   res.status(200).json({
     status: 'success',
     statusCounts,
     diffs: diffArray,
-    new: newArray, // Array with new objects, excluding _id and __v
-    needsUpdate: needsUpdateArray, // Array with objects needing updates, excluding _id and __v
+    new: newArray,
+    needsUpdate: needsUpdateArray,
     invalidPeople
   });
 });
@@ -174,16 +222,24 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
   
   
   
-  exports.getPeople = asyncHandler(async (req, res, next) => {
-    const people = await peopleModel.find().
-    select('AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
-    res.status(200).json({
-        status: 'success',
-        data: {
-            people
-        }
-    })
-})
+exports.getPeople = asyncHandler(async (req, res, next) => {
+  // Destructure isActive from the query or set it to null if not provided
+  const { isActive } = req.query;
+
+  // If isActive is not provided, find both active and inactive people
+  const query = isActive !== undefined ? { isActive: isActive } : {};
+  console.log(query);
+
+  const people = await peopleModel.find(query)
+      .select('AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
+console.log(people)
+  res.status(200).json({
+      status: 'success',
+      data: {
+          people
+      }
+  });
+});
 
 exports.getUserDetails = asyncHandler(async (req, res, next) => {
     const AnashIdentifier = req.params.AnashIdentifier // Trim any whitespace
