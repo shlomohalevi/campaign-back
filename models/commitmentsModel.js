@@ -19,28 +19,30 @@ const commitmentSchema = new mongoose.Schema({
     // required: [true, 'Last Name is required']
   },
   CommitmentAmount: {
-    type: Number
-    // required: [true, 'Commitment Amount is required']
+    type: Number,
+    required: [true, 'Commitment Amount is required']
   },
   AmountPaid: {
-    type: Number
-    // required: [true, 'Amount Paid is required']
+    type: Number,
+    default: 0,
+
+    required: [true, 'Amount Paid is required']
   },
   AmountRemaining: {
-    type: Number
-    // required: [true, 'Amount Remaining is required']
+    type: Number,
+    required: [true, 'Amount Remaining is required']
   },
   NumberOfPayments: {
-    type: Number
-    // required: [true, 'Number of Payments is required']
+    type: Number,
+    required: [true, 'Number of Payments is required']
   },
   PaymentsMade: {
-    type: Number
-    // required: [true, 'Payments Made is required']
+    type: Number,
+    required: [true, 'Payments Made is required']
   },
   PaymentsRemaining: {
-    type: Number
-    // required: [true, 'Payments Remaining is required']
+    type: Number,
+    required: [true, 'Payments Remaining is required']
   },
   Fundraiser: {
     type: String
@@ -63,15 +65,17 @@ const commitmentSchema = new mongoose.Schema({
   }],
   CampainName: {
     type: String,
-    default: '',
+    required: [true, 'Campaign Name is required'],
+    
+        // default: '',
   }
 });
 
 // הוספת אינדקס ייחודי על שילוב של campaignName ו-AnashIdentifier
-commitmentSchema.index(
-  { AnashIdentifier: 1, CampainName: 1 },
-  { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
-);
+// commitmentSchema.index(
+//   { AnashIdentifier: 1, CampainName: 1 },
+//   { unique: true, partialFilterExpression: { CampainName: { $ne: '' } } }
+// );
 commitmentSchema.virtual('person', {
   ref: 'People',  // The model to use for population
   localField: 'AnashIdentifier',  // The field in commitments schema

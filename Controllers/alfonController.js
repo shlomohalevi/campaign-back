@@ -137,25 +137,34 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
     return rest;
   };
 
-  await Promise.all(peopleArray.map(async (person) => {
-    const existingPerson = await peopleModel.findOne({ AnashIdentifier: person.AnashIdentifier });
+  // Step 1: Create a list of all AnashIdentifiers
+  const anashIdentifiers = peopleArray.map(person => person.AnashIdentifier);
+
+  // Step 2: Fetch all matching people from the database in one query
+  const existingPeople = await peopleModel.find({ AnashIdentifier: { $in: anashIdentifiers } });
+  
+  // Step 3: Create a map from AnashIdentifier to existingPerson
+  const existingPeopleMap = existingPeople.reduce((map, person) => {
+    map[person.AnashIdentifier] = person.toObject();
+    return map;
+  }, {});
+
+  // Step 4: Loop over peopleArray and check against the map
+  peopleArray.forEach(person => {
+    const existingPerson = existingPeopleMap[person.AnashIdentifier];
 
     if (existingPerson) {
-      console.log( existingPerson );
-      const existingPersonObj = existingPerson.toObject();
-
       const mismatchedKeys = Object.keys(person).filter(key =>
-        person[key] != existingPersonObj[key] &&
-        !(person[key] === '' && (existingPersonObj[key] === null || existingPersonObj[key] === undefined))
+        person[key] != existingPerson[key] &&
+        !(person[key] === '' && (existingPerson[key] === null || existingPerson[key] === undefined))
       );
-      // console.log(mismatchedKeys)
 
-      const extraKeys = Object.keys(existingPersonObj).filter(key =>
+      const extraKeys = Object.keys(existingPerson).filter(key =>
         !person.hasOwnProperty(key) &&
-        existingPersonObj[key] !== '' &&
-        existingPersonObj[key] !== null &&
-        existingPersonObj[key] !== undefined &&
-        !(Array.isArray(existingPersonObj[key])) &&
+        existingPerson[key] !== '' &&
+        existingPerson[key] !== null &&
+        existingPerson[key] !== undefined &&
+        !(Array.isArray(existingPerson[key])) &&
         key !== '_id' &&
         key !== 'PersonID' &&
         key !== '__v' &&
@@ -171,9 +180,8 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
       } else {
         statusCounts.needsUpdate += 1;
 
-        // Create diff object
         const existingDiff = mismatchedKeys.concat(extraKeys).reduce((acc, key) => {
-          acc[key] = existingPersonObj[key];
+          acc[key] = existingPerson[key];
           return acc;
         }, {});
 
@@ -189,23 +197,20 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
           uploadedPerson: uploadedDiff,
         });
 
-        // Push to needsUpdateArray, excluding _id and __v
-        needsUpdateArray.push(removeExcludedFields(existingPersonObj));
+        needsUpdateArray.push(removeExcludedFields(existingPerson));
       }
     } else {
       statusCounts.new += 1;
-
-      // Push to newArray, excluding _id and __v
       newArray.push(removeExcludedFields(person));
     }
-  }));
+  });
 
   res.status(200).json({
     status: 'success',
     statusCounts,
     diffs: diffArray,
-    new: newArray, // Array with new objects, excluding _id and __v
-    needsUpdate: needsUpdateArray, // Array with objects needing updates, excluding _id and __v
+    new: newArray,
+    needsUpdate: needsUpdateArray,
     invalidPeople
   });
 });

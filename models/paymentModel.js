@@ -6,8 +6,17 @@ const paymentSchema = new mongoose.Schema({
     ref: 'People',
     required: [true, 'Identity Number is required']
   },
-  CommitmentId:{
+  FirstName: {
     type: String,
+    default: '',
+
+  },
+  LastName: {
+    type: String,
+    default: '',
+  },
+  CommitmentId:{
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Commitment',
     required: [true, 'CommitmentId Number is required']
   },
