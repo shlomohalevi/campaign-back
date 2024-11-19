@@ -7,6 +7,9 @@ const {recordDeleteOperation, recordEditOperation} = require('../utils/RecordOpe
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
   let people = req.body;
+  // console.log('people');
+  // console.log(people);
+  
   let errorUploads = [];
   let successCount = 0;
   let newDocCount = 0;
@@ -34,13 +37,15 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
     else {
       try
       {
-
+        console.log('create person');
+        console.log(person);
         await peopleModel.create(person);
         newDocCount += 1;
         successCount += 1;  
       }
       catch (error) {
         errorUploads.push(person);
+        console.log('error');
         console.log(error);
       }
     }
@@ -90,10 +95,11 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
     return rest;
   };
 
-  await Promise.all(peopleArray.map(async (person) => {
+  await Promise.all(peopleArray.map(async (person) => { 
     const existingPerson = await peopleModel.findOne({ AnashIdentifier: person.AnashIdentifier });
 
     if (existingPerson) {
+      console.log( 'existingPerson' );
       console.log( existingPerson );
       const existingPersonObj = existingPerson.toObject();
 
@@ -118,7 +124,6 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
       );
 
       const isIdentical = mismatchedKeys.length === 0 && extraKeys.length === 0;
-
       if (isIdentical) {
         statusCounts.exists += 1;
       } else {
@@ -147,7 +152,9 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
       }
     } else {
       statusCounts.new += 1;
-
+      console.log('person');
+      console.log(person);
+      
       // Push to newArray, excluding _id and __v
       newArray.push(removeExcludedFields(person));
     }

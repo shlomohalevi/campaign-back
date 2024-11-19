@@ -161,6 +161,46 @@ exports.addPeopleToCampain = asyncHandler(async (req, res, next) => {
     res.status(200).json({ successcount, failcount });
 });
 
+exports.deletePersonFromCampain = asyncHandler(async (req, res, next) => {
+    const { AnashIdentifier, CampainName } = req.params;
+
+    try {
+        // חיפוש האדם לפי מזהה האנ"ש
+        const person = await peopleModel.findOne({ AnashIdentifier });
+
+        if (!person) {
+            return res.status(404).json({ message: 'Person not found' });
+        }
+
+        // בדיקה אם הקמפיין קיים ברשימת הקמפיינים של האדם
+        if (!person.Campaigns || !person.Campaigns.includes(CampainName)) {
+            return res.status(400).json({ message: 'Person is not part of this campaign' });
+        }
+        // בדיקה אם קיימת התחייבות של האדם בקמפיין זה
+        const commitments = await commitmentModel2.find({
+            AnashIdentifier,
+            CampainName
+        });
+
+        if (commitments.length > 0) {
+            return res.status(400).json({
+                message: `לא ניתן למחוק את ${person.FirstName} ${person.LastName} (${AnashIdentifier}) כי קיימת לו התחייבות ב${CampainName}`
+            });
+        }
+        // הסרה של הקמפיין מתוך רשימת הקמפיינים
+        person.Campaigns = person.Campaigns.filter((campaign) => campaign !== CampainName);
+
+        // שמירה של המסמך המעודכן
+        await person.save();
+
+        res.status(200).json({ message: 'Campaign removed from person successfully', person });
+    } catch (error) {
+        console.error("שגיאה בשרת:", error.message);
+        res.status(500).json({ message: 'שגיאה פנימית בשרת' });
+    }
+});
+
+
 
 exports.getCommitmentInCampain = asyncHandler(async (req, res, next) => {
     const campainName = req.params.campainName;
@@ -221,10 +261,10 @@ exports.getAllMemorialDates = asyncHandler(async (req, res, next) => {
         // Assuming each commitment has a `memorialDates` array
         return commitment.MemorialDays.map(dateObject => dateObject.date); // Adjust this line based on your data structure
     });
-    if(memorialDates.length === 0){
+    if (memorialDates.length === 0) {
         return next(new AppError(404, 'No memorial dates found'));
     }
-        res.status(200).json({
+    res.status(200).json({
         status: 'success',
         data: {
             memorialDates
