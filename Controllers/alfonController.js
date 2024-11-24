@@ -6,45 +6,60 @@ const {recordDeleteOperation, recordEditOperation} = require('../utils/RecordOpe
 
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
-  let people = req.body;
-  // console.log('people');
-  // console.log(people);
-  
+  const people = req.body;
+
+  // Early return if no data is provided
+  if (!Array.isArray(people) || people.length === 0) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'No people data provided',
+    });
+  }
+
   let errorUploads = [];
   let successCount = 0;
   let newDocCount = 0;
   let updatedDocCount = 0;
 
-  // Separate the people into update and insert operations
+  // Prepare bulk operations
   const bulkOps = people.map((person) => ({
     updateOne: {
       filter: { AnashIdentifier: person.AnashIdentifier },
       update: { $set: person },
-      upsert: true, // If it doesn't exist, create a new document
+      upsert: true, // Create a new document if no match is found
     },
   }));
+
   try {
+    // Execute bulk write operation
     const result = await peopleModel.bulkWrite(bulkOps, { ordered: false });
 
     // Count results
     newDocCount = result.upsertedCount;
     updatedDocCount = result.modifiedCount;
     successCount = newDocCount + updatedDocCount;
-    if (result.hasWriteErrors()) {
-      // Use getWriteErrors to retrieve each error and get the index of failed operations
-      errorUploads = result.getWriteErrors().map(err => people[err.index]);
 
+    // Collect errors (if any)
+    if (result.writeErrors && result.writeErrors.length > 0) {
+      errorUploads = result.writeErrors.map((err) => ({
+        person: people[err.index],
+        error: err.errmsg,
+      }));
     }
-  
-    
-  } 
-  
-  catch (error) {
-    // Log and collect errors (if `ordered: false`, errors won't stop the execution)
-    console.log(error);
-    errorUploads = people; // If bulkWrite fails entirely, log all as failed
+  } catch (error) {
+    console.error('Bulk write error:', error);
+
+    // Handle bulk write failure
+    errorUploads = people.map((person) => ({
+      person,
+      error: error.message,
+    }));
   }
 
+  // Log results
+  console.log({ successCount, updatedDocCount, newDocCount, errorUploads });
+
+  // Send response
   res.status(200).json({
     status: 'success',
     errorUploads,
@@ -170,7 +185,6 @@ exports.getAlfonChanges = asyncHandler(async (req, res, next) => {
         existingPerson[key] !== undefined &&
         !(Array.isArray(existingPerson[key])) &&
         key !== '_id' &&
-        key !== 'PersonID' &&
         key !== '__v' &&
         key !== '$__' &&
         key !== '$isNew' &&
@@ -228,11 +242,9 @@ exports.getPeople = asyncHandler(async (req, res, next) => {
 
   // If isActive is not provided, find both active and inactive people
   const query = isActive !== undefined ? { isActive: isActive } : {};
-  console.log(query);
 
   const people = await peopleModel.find(query)
       .select('AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id');
-console.log(people)
   res.status(200).json({
       status: 'success',
       data: {

@@ -104,7 +104,10 @@ const peopleSchema = new mongoose.Schema({
   },
   PersonID: {
     type: String,
-    default: '',
+    // default: '',
+    sparse: true,
+    unique: true,
+    trim: true
     
   },
   Classification: {
@@ -119,20 +122,20 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-    isActive: {
-      type: Boolean,
-      default: true,
-      set: function(v) {
-        // If the value is null, undefined, or an empty string, set it to true
-        return v === null || v === undefined || v === '' ? true : v;
-      },
+  isActive: {
+    type: Boolean,
+    default: true,
+    set: function(v) {
+      // If the value is null, undefined, or an empty string, set it to true
+      return v === null || v === undefined || v === '' ? true : v;
     },
-    // other fields...
-  
-    Email: {
-    type: String,
-    default: ''
   },
+  // other fields...
+  
+  Email: {
+  type: String,
+  default: ''
+},
   FreeFieldsToFillAlone: {
     type: String,
     default: ''
@@ -181,21 +184,25 @@ const peopleSchema = new mongoose.Schema({
 
 });
 
-peopleSchema.index(
-  { PersonID: 1 },
-  { 
-    unique: true, // Enforce uniqueness
-    partialFilterExpression: { 
-      PersonID: { $ne: null },  // Exclude null values
-      PersonID: { $ne: "" }     // Exclude empty strings
-    }
-  }
-);
+// peopleSchema.index(
+//   { PersonID: 1 },
+//   { 
+//     unique: true,
+//     partialFilterExpression: { 
+//       PersonID: { 
+//         $exists: true,
+//         $ne: null,
+//         $ne: ""
+//       }
+//     },
+//   }
+// );
 
   
 
 
 
 const People = mongoose.model('People', peopleSchema);
+
 
 module.exports = People;
