@@ -13,35 +13,66 @@ const {
   recordEditOperation,
 } = require("../utils/RecordOperation");
 const { set } = require("mongoose");
+const path = require("path");
 
-const validateCommitmentFields = (commitment) => {
-      if(!commitment.AmountPaid)
-        commitment.AmountPaid = 0;
-      if(!commitment.AmountRemaining)
-        commitment.AmountRemaining = commitment.CommitmentAmount;
-      if(!commitment.PaymentsMade)
-        commitment.PaymentsMade = 0;
-      if(!commitment.PaymentsRemaining)
-        commitment.PaymentsRemaining = commitment.NumberOfPayments;
-      if (commitment.CommitmentAmount <= 0)
-        return"סכום התחייבות שנותר לא תקין";
-      if (commitment.NumberOfPayments <= 0)
-        return "מספר התשלומים שנותרו לא תקין";
-      if (commitment.AmountRemaining < 0) 
-        return 'סכום שנותר לתשלום אינו יכול להיות שלילי.'
-      if (commitment.PaymentsRemaining < 0) 
-        return 'סכום שנותר לתשלומים אינו יכול להיות שלילי.'
-      if (commitment.CommitmentAmount < commitment.AmountPaid)
-        return "סכום התחייבות לא יכול להיות קטן מסכום התחייבות שנותר.";
-      if (commitment.NumberOfPayments < commitment.PaymentsMade)
-        return "מספר התשלומים לא יכול להיות קטן ממספר התשלומים שנותרו.";
-      if( commitment.CommitmentAmount - commitment.AmountPaid != commitment.AmountRemaining)
-        return " סכום שנותר לתשלום לא תקין";
-      if(commitment.NumberOfPayments-commitment.PaymentsMade != commitment.PaymentsRemaining)
-        return " מספר התשלומים שנותרו לא תקין";
-    
-      return null;
-    };
+const validateCommitmentFields = (commitment,isUpdate) => {
+  // Convert to numbers to avoid issues with string-based inputs
+  commitment.CommitmentAmount = Number(commitment.CommitmentAmount);
+  commitment.AmountPaid = Number(commitment.AmountPaid ?? 0);  // Default to 0 if falsy
+  commitment.PaymentsMade = Number(commitment.PaymentsMade ?? 0);  // Default to 0 if falsy
+  commitment.NumberOfPayments = Number(commitment.NumberOfPayments);
+  if(isUpdate){
+  commitment.AmountRemaining = Number(commitment.AmountRemaining ?? commitment.CommitmentAmount);  // Default to CommitmentAmount if falsy
+  commitment.PaymentsRemaining = Number(commitment.PaymentsRemaining ?? commitment.NumberOfPayments);  // Default to NumberOfPayments if falsy
+}
+else{
+    commitment.AmountRemaining = Number(commitment.AmountRemaining || commitment.CommitmentAmount);  // Default to CommitmentAmount if falsy
+    commitment.PaymentsRemaining = Number(commitment.PaymentsRemaining || commitment.NumberOfPayments);  // Default to NumberOfPayments if falsy
+
+  }
+
+  // Check for invalid CommitmentAmount or NumberOfPayments
+  if (commitment.CommitmentAmount <= 0) {
+    return "סכום התחייבות שנותר לא תקין";
+  }
+  if (commitment.NumberOfPayments <= 0) {
+    return "מספר התשלומים לא תקין";
+  }
+  
+  // Check for negative AmountRemaining or PaymentsRemaining
+  if (commitment.AmountRemaining < 0) {
+    return 'סכום שנותר לתשלום אינו יכול להיות שלילי.';
+  }
+  if (commitment.PaymentsRemaining < 0) {
+    return 'סכום שנותר לתשלומים אינו יכול להיות שלילי.';
+  }
+
+  // Check if CommitmentAmount is not less than AmountPaid
+  if (commitment.CommitmentAmount < commitment.AmountPaid) {
+    return "סכום התחייבות לא יכול להיות קטן מסכום התחייבות שנותר.";
+  }
+
+  // Check if NumberOfPayments is not less than PaymentsMade
+  if (commitment.NumberOfPayments < commitment.PaymentsMade) {
+    return "מספר התשלומים לא יכול להיות קטן ממספר התשלומים שנותרו.";
+  }
+
+  // Check if the remaining amount matches the difference between CommitmentAmount and AmountPaid
+  if (commitment.CommitmentAmount - commitment.AmountPaid !== commitment.AmountRemaining) {
+    console.log(commitment.CommitmentAmount);
+    console.log(commitment.AmountPaid);
+    console.log(commitment.AmountRemaining);
+    console.log(commitment.CommitmentAmount - commitment.AmountPaid);
+    return " סכום שנותר לתשלום לא תקין";
+  }
+
+  // Check if the remaining payments match the difference between NumberOfPayments and PaymentsMade
+  if (commitment.NumberOfPayments - commitment.PaymentsMade !== commitment.PaymentsRemaining) {
+    return " מספר התשלומים שנותרו לא תקין";
+  }
+
+  return null;  // Return null if all validations pass
+};
 
 
 
@@ -139,7 +170,7 @@ const validateCommitmentFields = (commitment) => {
           continue;
         }
     
-        const fieldError = validateCommitmentFields(commitment);
+        const fieldError = validateCommitmentFields(commitment,false);
         if (fieldError !== null) {
           invalidCommitments.push({ ...commitment, reason: fieldError });
           continue;
@@ -168,9 +199,17 @@ const validateCommitmentFields = (commitment) => {
     });
     exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
       const commitment = req.body;
+      const person = await People.findOne({
+        AnashIdentifier: commitment.AnashIdentifier,
+        isActive: true,
+      })
+      if (!person)
+        return next(new AppError(400,"מזהה אנש לא קיים במערכת או לא פעיל"));
       const exsitCommitment = await commitmentsModel.findById(commitment._id);
       if (!exsitCommitment)
         return next(new AppError( 400,"התחייבות לא נמצאה"));
+
+
       if (!commitment.CommitmentAmount || commitment.CommitmentAmount <= 0)
         return next(new AppError(400,"סכום התחייבות לא תקין"));
       if (!commitment.NumberOfPayments || commitment.NumberOfPayments <= 0)
@@ -178,7 +217,7 @@ const validateCommitmentFields = (commitment) => {
 
         
       
-      const fieldError = validateCommitmentFields(commitment);
+      const fieldError = validateCommitmentFields(commitment,true);
 
       if (fieldError !== null) {
         return next(new AppError(400,fieldError));
@@ -224,42 +263,52 @@ const validateCommitmentFields = (commitment) => {
     });
   })
 
-  function validatePaymentFields(paymentAmount,commitment) {
-
-    const updatedAmountPaid = (commitment.AmountPaid || 0) + paymentAmount;
-    const updatedAmountRemaining = (commitment.CommitmentAmount || 0) - updatedAmountPaid;
-    const updatedPaymentsMade = (commitment.PaymentsMade || 0) + 1;
-    const updatedPaymentsRemaining = (commitment.PaymentsRemaining || 0) - 1;
+  function validatePaymentFields(paymentAmount, commitment) {
+    // Convert fields to numbers (in case they are strings or undefined)
+    const amountPaid = Number(commitment.AmountPaid ?? 0); 
+    const commitmentAmount = Number(commitment.CommitmentAmount ?? 0);
+    const paymentsMade = Number(commitment.PaymentsMade ?? 0);
+    const paymentsRemaining = Number(commitment.PaymentsRemaining ?? 0);
+    const numberOfPayments = Number(commitment.NumberOfPayments ?? 0);
+  
+    // Updated values
+    const updatedAmountPaid = amountPaid + paymentAmount;
+    const updatedAmountRemaining = commitmentAmount - updatedAmountPaid;
+    const updatedPaymentsMade = paymentsMade + 1;
+    const updatedPaymentsRemaining = paymentsRemaining - 1;
+  
     console.log(updatedAmountPaid);
   
-    if (updatedAmountPaid > commitment.CommitmentAmount) {
+    // Validation checks
+    if (updatedAmountPaid > commitmentAmount) {
       return "סכום התשלום חורג מסכום ההתחייבות";
     }
     if (updatedAmountRemaining < 0) {
-      return'סכום התשלום גדול מהסכום שנותר לתשלום';
+      return 'סכום התשלום גדול מהסכום שנותר לתשלום';
     }
-    if (updatedAmountRemaining > commitment.CommitmentAmount) {
-      return'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות';
+    if (updatedAmountRemaining > commitmentAmount) {
+      return 'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות';
     }
-    if (updatedPaymentsMade > commitment.NumberOfPayments) {
-      return'מספר התשלומים בפועל לא יכול לעלות על מספר התשלומים הכולל';
+    if (updatedPaymentsMade > numberOfPayments) {
+      return 'מספר התשלומים בפועל לא יכול לעלות על מספר התשלומים הכולל';
     }
     if (updatedPaymentsRemaining < 0) {
       return 'מספר התשלומים הנותרים לא יכול להיות פחות מאפס';
     }
-    if (updatedPaymentsRemaining > commitment.NumberOfPayments) {
+    if (updatedPaymentsRemaining > numberOfPayments) {
       return 'מספר התשלומים שנותרו גדול מסך התשלומים';
     }
   
-    
+    return null;  // No errors, validation passed
   }
-  
+    
   
       
   
   exports.reviewCommitmentPayments = async (req, res, next) => {
     //multipul payments
-    const paymentsData = Array.isArray(req.body) ? req.body : [req.body];
+    let paymentsData = Array.isArray(req.body.data)? req.body.data:[req.body.data];
+    let campainName = req.body.campainName;
     const validPayments = [];
     const invalidPayments = [];
     const activePeople = await People.find({ isActive: true });
@@ -279,9 +328,11 @@ const validateCommitmentFields = (commitment) => {
       if (!person) {
         return { ...payment, reason: " מזהה אנש לא קיים במערכת או לא פעיל " };
       }
-      if (!payment.CampainName) {
+      if (!payment.CampainName&&!campainName) {
+        console.log(payment.CampainName);
         return { ...payment, reason: "שם קמפיין לא סופק" };
       }
+      payment.CampainName = payment.CampainName || campainName;
   
   
       if (!payment.Amount || payment.Amount <= 0)
@@ -423,7 +474,11 @@ const validateCommitmentFields = (commitment) => {
 
   exports.uploadCommitmentPayment = asyncHandler(async (req, res, next) => {
     const payment = req.body;
-    console.log(payment);
+    const person = await People.findOne({AnashIdentifier:payment.AnashIdentifier,isActive:true});
+    if(!person)
+    {
+      return next(new AppError(400,'מזהה אנש לא קיים במערכת או לא פעיל'));
+    }
     if(!payment)
     {
       return next(new AppError(400,'לא נשלח תשלום'));
@@ -457,13 +512,18 @@ const validateCommitmentFields = (commitment) => {
     if (!payment) {
       return next(new AppError(404,' לא נמצא תשלום במערכת'));
     }
-  
+    const person = await People.findOne({ AnashIdentifier: payment.AnashIdentifier, isActive: true });
+    if (!person) {
+      return next(new AppError(404,"מזהה אנש לא קיים במערכת או לא פעיל "));
+    }
+    
     const commitmentId = payment.CommitmentId;
+
   
     // מחק את התשלום
     const commitment = await commitmentsModel.findById(commitmentId);
     if (!commitment) {
-      return next(new AppError("Commitment not found", 404));
+      return next(new AppError("התחייבות לא קיימת במערכת  ", 404));
     }
     const deletedPayment = await paymentModel.findByIdAndDelete(paymentId);
   
@@ -511,53 +571,71 @@ function translateErrorToHebrew(errorMessage) {
 }
 
 exports.getCommitment = asyncHandler(async (req, res, next) => {
-  const commitment = await commitmentsModel.find();
-  // select('AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser');
+  // Fetch commitments and populate the AnashIdentifier field with a filter
+  const commitments = await commitmentsModel.find()
+  
+
   res.status(200).json({
     status: "success",
     data: {
-      commitment,
+      commitments,
     },
+    
   });
-});
+})
 
 exports.getCommitmentsByCampaign = asyncHandler(async (req, res, next) => {
-  const { campainName } = req.query;
+  const { campainName, isActive } = req.query;
+  console.log(req.query);
+  console.log(campainName, isActive);
 
-  const filter = campainName ? { CampainName: campainName } : {};
+  // Step 1: Build filters for campaign and isActive
+  const campainFilter = campainName ? { CampainName: campainName } : {};
+  let isActiveFilter = {};
 
+  if (isActive === "true") {
+    isActiveFilter.isActive = true;
+  } else if (isActive === "false") {
+    isActiveFilter.isActive = false;
+  }
+
+  // Step 2: Retrieve the list of AnashIdentifiers based on the isActive filter
+  let activePeople;
+  if (isActive === "true" || isActive === "false") {
+    activePeople = await People.find(isActiveFilter).select("AnashIdentifier");
+  } else {
+    // If no isActive filter, retrieve all AnashIdentifiers
+    activePeople = await People.find().select("AnashIdentifier");
+  }
+
+  // Step 3: Get a list of AnashIdentifiers from the activePeople result
+  const anashIdentifiers = activePeople.map(person => person.AnashIdentifier);
+
+  // Step 4: Query commitments that match the AnashIdentifiers
   const commitments = await commitmentsModel
-    .find(filter)
-    .select(
-      "AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser"
-    );
-    // console.log(commitments);
+    .find({
+      ...campainFilter,
+      AnashIdentifier: { $in: anashIdentifiers } // Filter by AnashIdentifiers
+    });
 
+  // Step 5: Return the result
   res.status(200).json({
     status: "success",
     data: {
-      commitments: commitments,
+      commitments,
     },
   });
 });
 
-exports.getcommitmentbyanashandcampaign = async (req, res, next) => {
-  const { AnashIdentifier, CampainName } = req.query;
+    
+      
+    
+    
+    
+  // .select(
+  //   "AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser"
+  // );
 
-  try {
-    const commitment = await commitmentsModel.findOne({
-      AnashIdentifier: AnashIdentifier,
-      CampainName: CampainName,
-    });
-    if (commitment) {
-      res.json(commitment);
-    } else {
-      return res.status(404).json({ message: "התחייבות לא נמצאה" }); // Explicitly return 404 for not found
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 function getCommitmentOfPayment(payment,commitments)
 {
   const matchingCommitment = commitments.find(
@@ -698,6 +776,11 @@ async function getCommitmentPayments(commitmentId)
  }
  exports.deleteCommitment = asyncHandler(async (req, res, next) => {
   const commitmentId = req.params.commitmentId;
+  const commitmentPayment = await paymentModel.find({ CommitmentId: commitmentId });
+
+  if (commitmentPayment?.length > 0) {
+    return next(new AppError(400, "לא ניתן למחוק התחייבות כי קיימים תשלומים בהתחייבות"));
+  }
 
   // Delete commitment
   const deletedCommitment = await commitmentsModel.findByIdAndDelete(commitmentId);
@@ -811,6 +894,35 @@ exports.AddMemorialDayToPerson = asyncHandler(async (req, res, next) => {
   if (!campain) {
     return next(new AppError("Campain not found", 404));
   }
+  //get all memorial days in this campain to check if there is day with the same date
+  const campinCommitments = await commitmentsModel.find({
+    CampainName: CampainName,
+  })
+  let commitmentWithTheSameDate = '';
+  // console.log(otherCampainCommitments);
+  const isMemorialDayAlreadySet = campinCommitments?.some(commitment => 
+    commitment.MemorialDays?.some(memDay => 
+    {
+      if (isTheSameDate(new Date(memDay.date), new Date(MemorialDay.date))) {
+        commitmentWithTheSameDate = commitment;
+        return true;
+      }
+      return false;
+    }
+     
+    )
+  );
+
+  if (isMemorialDayAlreadySet) {
+    return next(new AppError(400,`יום הנצחה תפוס על ידי ${commitmentWithTheSameDate.FirstName} ${commitmentWithTheSameDate.LastName}` ));
+  }
+
+    
+  
+
+
+
+
   const isEnoughMoney =
     Math.floor(
       commitment.CommitmentAmount / campain.minimumAmountForMemorialDay

@@ -5,8 +5,6 @@ const router = express.Router()
 
 router.route('/').get( authController.protect, commitmentController.getCommitment)
 router.route('/get-commitment/:_id').get( authController.protect, commitmentController.getCommitmentById)
-router.route('/get-commitment-by-anash-and-campain').get( authController.protect, commitmentController.getcommitmentbyanashandcampaign);
-router.route('/delete-commitment/:commitmentId').delete( authController.protect, commitmentController.deleteCommitment)
 router.route('/add-memorial-day').post( authController.protect, commitmentController.AddMemorialDayToPerson);
 router.route('/get-eligible-people/:campainName').get( authController.protect, commitmentController.GetEligblePeopleToMemmorialDay);
 router.route('/delete-memorial-day').delete( authController.protect, commitmentController.DeleteMemorialDay);
@@ -17,7 +15,9 @@ router.route('/upload-commitment-payments').post( authController.protect, commit
 router.route('/getCommitmentsByCampaign').get( authController.protect, commitmentController.getCommitmentsByCampaign)
 router.route('/update-commitment-details').post( authController.protect, commitmentController.updateCommitmentDetails);
 router.route('/upload-commitment-payment').post( authController.protect, commitmentController.uploadCommitmentPayment);
-router.route('/delete-payment/:paymentId').delete( authController.protect, commitmentController.deletePayment)
+router.route('/delete-payment/:paymentId').delete( authController.protect,authController.restrictTo(['Admin', 'User']),
+ commitmentController.deletePayment)
+router.route('/delete-commitment/:commitmentId').delete( authController.protect, commitmentController.deleteCommitment)
 
 
 
