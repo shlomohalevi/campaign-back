@@ -38,26 +38,23 @@ exports.getCampains = asyncHandler(async (req, res, next) => {
 exports.getPeopleByCampain = asyncHandler(async (req, res, next) => {
   const campainName = req.params.campainName;
 
-  try {
+ 
     // Find all people whose Campaigns map contains the specified campainName
     const people = await peopleModel.find({ Campaigns: campainName});
     // console.log(people)
 
     // If no people are found, return a 404 status
     if (!people || people.length === 0) {
-      return "No people found";
+      return next(new AppError(404, "No people found"));
     }
 
     // Return the list of people
     res.status(200).json(people);
-  } catch (error) {
-    next(new AppError(500, "Something went wrong")); // Pass the error to the error-handling middleware
-  }
+  
 });
 exports.getPeopleNotInCampain = asyncHandler(async (req, res, next) => {
   const campainName = req.params.campainName;
 
-  try {
     // Find people who either do not have the Campaigns property
     // or have a Campaigns property that does not contain the specified campainName
     const people = await peopleModel.find({
@@ -78,9 +75,7 @@ exports.getPeopleNotInCampain = asyncHandler(async (req, res, next) => {
 
     // Return the list of people
     res.status(200).json(people);
-  } catch (error) {
-    next(new AppError(500, "Something went wrong")); // Pass the error to the error-handling middleware
-  }
+  
 });
 
 exports.addPersonToCampaign = asyncHandler(async (req, res, next) => {
