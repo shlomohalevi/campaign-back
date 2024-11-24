@@ -13,4 +13,5 @@ router.route('/delete-user/:id').delete(authController.protect, authController.r
 router.route('/forgot-password').post(authController.forgotPassword)
 router.route('/reset-password/:resetToken').post(authController.resetPassword)
 router.route('/update-maneger-details').post(authController.protect, authController.updateManagerDetails)
+router.route('/validate-password').post( authController.protect,authController.restrictTo(['Admin', 'User']), authController.validatePassword)
 module.exports = router
