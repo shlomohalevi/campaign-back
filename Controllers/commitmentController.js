@@ -206,6 +206,15 @@ else{
       if (!commitment.CommitmentAmount || commitment.CommitmentAmount <= 0)
         return next(new AppError(400,"סכום התחייבות לא תקין"));
 
+      const campain = await campainModel.findOne({ CampainName: commitment.CampainName });
+      if (!campain)
+        return next(new AppError(400," קמפיין לא זוהה"));
+      const amountPerMemorialDay = campain.minimumAmountForMemorialDay;
+      if (commitment.CommitmentAmount < (amountPerMemorialDay * commitment.MemorialDays.length))
+        return next(new AppError(400,"סכום ההתחייבות אינו מספיק למספר ימי ההנצחה"));
+
+      
+
         
       
       const fieldError = validateCommitmentFields(commitment,true);
