@@ -11,12 +11,12 @@ const commitmentSchema = new mongoose.Schema({
     ref: 'People'
   },
   FirstName: {
-    type: String
-    // required: [true, 'First Name is required']
+    type: String,
+    required: [true, 'First Name is required']
   },
   LastName: {
-    type: String
-    // required: [true, 'Last Name is required']
+    type: String,
+    required: [true, 'Last Name is required']
   },
   CommitmentAmount: {
     type: Number,
@@ -53,7 +53,7 @@ const commitmentSchema = new mongoose.Schema({
       'הבטחה','משולב','כרטיס אשראי','אשראי הו"ק','הו"ק','שיקים','העברה','קיזוז'],
     // required: [true, 'Payment Method is required']
   },
-  Notes: {
+  Notes: {""
     type: String
   },
   ResponseToFundraiser: {
