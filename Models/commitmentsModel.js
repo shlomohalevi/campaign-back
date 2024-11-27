@@ -11,11 +11,11 @@ const commitmentSchema = new mongoose.Schema({
     ref: 'People'
   },
   FirstName: {
-    type: String
+    type: String,
     // required: [true, 'First Name is required']
   },
   LastName: {
-    type: String
+    type: String,
     // required: [true, 'Last Name is required']
   },
   CommitmentAmount: {
@@ -51,10 +51,11 @@ const commitmentSchema = new mongoose.Schema({
   PaymentMethod: {
     type: String,enum: ['מזומן', 'שיק', 'אשראי','הו"ק אשראי','העברה בנקאית','הו"ק בנקאית',
       'הבטחה','משולב','כרטיס אשראי','אשראי הו"ק','הו"ק','שיקים','העברה','קיזוז'],
-    // required: [true, 'Payment Method is required']
+    required: [true, 'Payment Method is required']
   },
   Notes: {
-    type: String
+    type: String,
+    default: ''
   },
   ResponseToFundraiser: {
     type: String
@@ -68,7 +69,7 @@ const commitmentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Campaign Name is required'],
     
-        // default: '',
+        default: '',
   }
 });
 
