@@ -10,6 +10,6 @@ router.route('/upload').post( express.json({ limit: '50mb' }), uploadsController
 router.route('/update-user-details').post( authController.protect,  uploadsControllers.updateUserDetails)
 router.route('/delete-user/:AnashIdentifier').delete(  authController.protect,authController.restrictTo(['Admin', 'User']), uploadsControllers.deleteUser)
 router.route('/add-user').post(uploadsControllers.addPerson)
-router.route('/get-alfon-changes').post(express.json({ limit: '50mb' }), uploadsControllers.getAlfonChanges)
+router.route('/review-uploaded-people').post(express.json({ limit: '50mb' }), uploadsControllers.reviewUploadedPeople)
 // router.route('/record-operation').post(  utils.recordOperation)
 module.exports = router 

@@ -35,12 +35,12 @@ const peopleSchema = new mongoose.Schema({
   FirstName: {
     type: String,
     default: '',
-    required: [true, 'First Name is required']
+    // required: [true, 'First Name is required']
   },
   LastName: {
     type: String,
     default: '',
-    required: [true, 'Last Name is required']
+    // required: [true, 'Last Name is required']
   },
   Address: {
     type: String,
