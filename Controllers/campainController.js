@@ -37,6 +37,7 @@ exports.getCampains = asyncHandler(async (req, res, next) => {
 });
 exports.getPeopleByCampain = asyncHandler(async (req, res, next) => {
   const campainName = req.params.campainName;
+  // console.log('e')
 
  
     // Find all people whose Campaigns map contains the specified campainName
@@ -80,7 +81,6 @@ exports.getPeopleNotInCampain = asyncHandler(async (req, res, next) => {
 
 exports.addPersonToCampaign = asyncHandler(async (req, res, next) => {
   const { campainName, AnashIdentifier } = req.body;
-  console.log(req.body);
 
   // Find the person by their identifier
   const person = await peopleModel.findOne({ AnashIdentifier , isActive: true });
@@ -185,10 +185,17 @@ exports.addPeopleToCampaign = asyncHandler(async (req, res, next) => {
 
     const bulkUpdates = validPeopleToAdd.map((person) => ({
       updateOne: {
-        filter: { AnashIdentifier: person.AnashIdentifier },
-        update: { $push: { Campaigns: campainName } },
+        filter: { 
+          AnashIdentifier: person.AnashIdentifier,
+          // Ensure that the campaign doesn't already exist in the Campaigns array
+          Campaigns: { $ne: campainName } 
+        },
+        update: { 
+          $push: { Campaigns: campainName } 
+        },
       },
     }));
+    
     await peopleModel.bulkWrite(bulkUpdates);
 
     res.status(200).json({ status: "success" });

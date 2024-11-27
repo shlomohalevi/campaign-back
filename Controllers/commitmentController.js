@@ -12,8 +12,6 @@ const {
   recordDeleteOperation,
   recordEditOperation,
 } = require("../utils/RecordOperation");
-const { set } = require("mongoose");
-const path = require("path");
 
 const validateCommitmentFields = (commitment,isUpdate) => {
   // Convert to numbers to avoid issues with string-based inputs
@@ -35,7 +33,7 @@ else{
   if (commitment.CommitmentAmount <= 0) {
     return "סכום התחייבות שנותר לא תקין";
   }
-  if (commitment.NumberOfPayments <= 0) {
+  if (commitment.NumberOfPayments && commitment.NumberOfPayments <= 0) {
     return "מספר התשלומים לא תקין";
   }
   
@@ -53,21 +51,17 @@ else{
   }
 
   // Check if NumberOfPayments is not less than PaymentsMade
-  if (commitment.NumberOfPayments < commitment.PaymentsMade) {
+  if (commitment.NumberOfPayments && commitment.NumberOfPayments < commitment.PaymentsMade) {
     return "מספר התשלומים לא יכול להיות קטן ממספר התשלומים שנותרו.";
   }
 
   // Check if the remaining amount matches the difference between CommitmentAmount and AmountPaid
-  if (commitment.CommitmentAmount - commitment.AmountPaid !== commitment.AmountRemaining) {
-    console.log(commitment.CommitmentAmount);
-    console.log(commitment.AmountPaid);
-    console.log(commitment.AmountRemaining);
-    console.log(commitment.CommitmentAmount - commitment.AmountPaid);
+  if (commitment.CommitmentAmount - commitment.AmountPaid != commitment.AmountRemaining) {
     return " סכום שנותר לתשלום לא תקין";
   }
 
   // Check if the remaining payments match the difference between NumberOfPayments and PaymentsMade
-  if (commitment.NumberOfPayments - commitment.PaymentsMade !== commitment.PaymentsRemaining) {
+  if (commitment.NumberOfPayments && commitment.NumberOfPayments - commitment.PaymentsMade != commitment.PaymentsRemaining) {
     return " מספר התשלומים שנותרו לא תקין";
   }
 
@@ -115,8 +109,6 @@ else{
         }
         if (!commitment.CommitmentAmount || commitment.CommitmentAmount <= 0)
           return { ...commitment, reason: "סכום התחייבות לא תקין" };
-        if (!commitment.NumberOfPayments || commitment.NumberOfPayments <= 0)
-          return { ...commitment, reason: "מספר התשלומים לא תקין" };
     
         return commitment;
       });
@@ -156,12 +148,13 @@ else{
           continue;
         }
     
-        const isExisting = allExistingCommitments.some(
-          (existing) =>
-            existing.AnashIdentifier === commitment.AnashIdentifier &&
-            existing.CampainName === commitment.CampainName
-        );
-    
+        const isExisting = allExistingCommitments.some((existing) => {
+        
+          // Directly return the result of the condition
+          return existing.AnashIdentifier === commitment.AnashIdentifier &&
+                 existing.CampainName === commitment.CampainName;
+        });
+            
         if (isExisting) {
           invalidCommitments.push({
             ...commitment,
@@ -212,8 +205,6 @@ else{
 
       if (!commitment.CommitmentAmount || commitment.CommitmentAmount <= 0)
         return next(new AppError(400,"סכום התחייבות לא תקין"));
-      if (!commitment.NumberOfPayments || commitment.NumberOfPayments <= 0)
-        return next(new AppError(400,"מספר התשלומים לא תקין"));
 
         
       
@@ -253,6 +244,35 @@ else{
       console.log("Commitments not uploaded");
       return next(new AppError("Commitments not uploaded", 404));
     }
+    const anashIdentifiers = uploadedCommitments.map(commitment => commitment.AnashIdentifier);
+
+    // Find all the people with matching AnashIdentifiers (this avoids `find` for each commitment)
+    const people = await People.find({ AnashIdentifier: { $in: anashIdentifiers } });
+
+    // Prepare the bulk updates for people who need to update their campaigns array
+    const bulkUpdates = [];
+
+    for (const commitment of uploadedCommitments) {
+      const { AnashIdentifier, CampainName } = commitment;
+
+      const person = people.find(p => p.AnashIdentifier === AnashIdentifier);
+
+      if (person && !person.Campaigns.includes(CampainName)) {
+        // Add an update operation to the bulkUpdates array
+        bulkUpdates.push({
+          updateOne: {
+            filter: { AnashIdentifier },
+            update: { $push: { Campaigns: CampainName } }
+          }
+        });
+      }
+    }
+
+    // Execute all the updates in a single batch operation
+    if (bulkUpdates.length > 0) {
+      await People.bulkWrite(bulkUpdates);
+    }
+    
   
   
     res.status(200).json({
@@ -281,7 +301,7 @@ else{
   
     // Validation checks
     if (updatedAmountPaid > commitmentAmount) {
-      return "סכום התשלום חורג מסכום ההתחייבות";
+      return "סך התשלום חורג מסכום ההתחייבות";
     }
     if (updatedAmountRemaining < 0) {
       return 'סכום התשלום גדול מהסכום שנותר לתשלום';
@@ -289,13 +309,13 @@ else{
     if (updatedAmountRemaining > commitmentAmount) {
       return 'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות';
     }
-    if (updatedPaymentsMade > numberOfPayments) {
+    if (numberOfPayments&&updatedPaymentsMade > numberOfPayments) {
       return 'מספר התשלומים בפועל לא יכול לעלות על מספר התשלומים הכולל';
     }
-    if (updatedPaymentsRemaining < 0) {
+    if (numberOfPayments&& updatedPaymentsRemaining < 0) {
       return 'מספר התשלומים הנותרים לא יכול להיות פחות מאפס';
     }
-    if (updatedPaymentsRemaining > numberOfPayments) {
+    if (numberOfPayments&& updatedPaymentsRemaining > numberOfPayments) {
       return 'מספר התשלומים שנותרו גדול מסך התשלומים';
     }
   
@@ -306,7 +326,6 @@ else{
       
   
   exports.reviewCommitmentPayments = async (req, res, next) => {
-    //multipul payments
     let paymentsData = Array.isArray(req.body.data)? req.body.data:[req.body.data];
     let campainName = req.body.campainName;
     const validPayments = [];
@@ -529,11 +548,11 @@ else{
   
   
     // עדכן את ההתחייבות
-    commitment.AmountPaid = commitment.AmountPaid - parseFloat(payment.Amount);
-    commitment.AmountRemaining =
-      commitment.AmountRemaining + parseFloat(payment.Amount);
-    commitment.PaymentsMade = commitment.PaymentsMade - 1;
-    commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1;
+   commitment.AmountPaid? commitment.AmountPaid = commitment.AmountPaid - parseFloat(payment.Amount):commitment.AmountPaid;
+   commitment.AmountRemaining? commitment.AmountRemaining = commitment.AmountRemaining + parseFloat(payment.Amount):commitment.AmountRemaining;
+
+   commitment.PaymentsMade? commitment.PaymentsMade = commitment.PaymentsMade - 1:commitment.PaymentsMade;
+   commitment.PaymentsRemaining? commitment.PaymentsRemaining = commitment.PaymentsRemaining + 1:commitment.PaymentsRemaining;
   
     const updatedCommitment = await commitment.save();
     // if (deletedPayment) {
