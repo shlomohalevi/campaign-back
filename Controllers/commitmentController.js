@@ -424,7 +424,8 @@ else{
 
   exports.uploadPayments = asyncHandler(async (req, res, next) => {
     const payments = Array.isArray(req.body) ? req.body : [req.body];
-    
+    console.log('1');
+
     // Get all unique commitment IDs from the payments
     const commitmentIds = [...new Set(payments.map(payment => payment.CommitmentId))];
     
@@ -460,9 +461,11 @@ else{
             PaymentsMade: commitment.PaymentsMade
           });
         }
+        console.log(commitmentsToUpdate);
+        console.log('2');
   
         const updateData = commitmentsToUpdate.get(commitment._id.toString());
-        updateData.PaymentsRemaining -= 1;
+         updateData.PaymentsRemaining = updateData.numberOfPayments?  updateData.PaymentsRemaining - 1:updateData.PaymentsRemaining;
         updateData.AmountRemaining -= payment.Amount;
         updateData.AmountPaid += payment.Amount;
         updateData.PaymentsMade += 1;
@@ -524,7 +527,7 @@ else{
     commitment.AmountPaid = commitment.AmountPaid + parseFloat(payment.Amount);
     commitment.AmountRemaining = commitment.AmountRemaining - parseFloat(payment.Amount);
     commitment.PaymentsMade = commitment.PaymentsMade + 1;
-    commitment.PaymentsRemaining = commitment.PaymentsRemaining - 1;
+    commitment.PaymentsRemaining = commitment.numberOfPayments? commitment.PaymentsRemaining - 1: commitment.PaymentsRemaining;
     const updatedCommitment = await commitment.save();
     res.status(200).json({
       status: "success",
