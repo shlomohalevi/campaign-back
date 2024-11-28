@@ -81,13 +81,9 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
       return next(new AppError(500, "Failed to perform bulk write."));
   }
   
-  
-  console.log('result', result);    
-  
-  res.status(200).json({
-    status: "success",
-  });
 });
+  
+  
 
 // Count results
 // newDocCount = result.upsertedCount;
@@ -178,6 +174,11 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       invalidPeople.push({ ...person, reason: "מזהה אנש לא סופק" });
       continue;
     }
+    if(!person.FirstName || !person.LastName) 
+    {
+      invalidPeople.push({ ...person, reason: "שם פרטי או שם משפחה לא סופקו" });
+
+    }
 
     person.AnashIdentifier = String(person.AnashIdentifier);
 
@@ -215,14 +216,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
           ...person,
           reason: "הועלה מידע עם מספר זהות שכבר קיים במערכת, אבל מזהה אנש שונה",
         });
-      } else {
-        // If the same PersonID exists with the same AnashIdentifier, treat it as a conflict
-        conflictedPeople.push({
-          anash: person.AnashIdentifier,
-          uploaded: person,
-          existing: existingDBPersonId,
-        });
-      }
+      } 
       continue;
     }
 
