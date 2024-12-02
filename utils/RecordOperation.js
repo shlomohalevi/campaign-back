@@ -10,22 +10,25 @@ const peopleModel = require('../models/peopleModel')
 
 
 exports.recordEditOperation =  (operation) => {
-    const newValue = operation.NewValue
-    const oldValue = operation.OldValue
+    const newValues = operation.NewValues
+    const oldValues = operation.OldValues
     const newOperation = {
         Date: operation.Date,
         OperationType: operation.OperationType,
         UserFullName: operation.UserFullName,
-        OldValue: {},
-        NewValue: {}
+        Data:{
+            OldValue: {},
+            NewValue: {}}
+            ,
+        Desc: operation.Desc
         }
-    for (const [key, value] of Object.entries(newValue)) {
-        if(oldValue[key] !== value) {
-            newOperation.NewValue[key] = value
-            newOperation.OldValue[key] = oldValue[key]
+    for (const [key, value] of Object.entries(newValues)) {
+        if(oldValues[key] !=value) {
+            newOperation.Data.NewValue[key] = value
+            newOperation.Data.OldValue[key] = oldValues[key]
         }
     }
-    if(Object.keys(newOperation.NewValue).length  === 0) {
+    if(Object.keys(newOperation.Data.NewValue).length  === 0) {
         return null
     }
 
@@ -39,16 +42,18 @@ exports.recordDeleteOperation =  (operation) => {
         Date: operation.Date,
         OperationType: operation.OperationType,
         UserFullName: operation.UserFullName,
-        OldValue: operation.OldValue
+        Data: operation.Data,
+        Desc: operation.Desc
         }
     return newOperation
 }
-exports.recordNewCommitmentOperation =  (operation) => {
+exports.recordAddOperation =  (operation) => {
     const newOperation = {
         Date: operation.Date,
         OperationType: operation.OperationType,
         UserFullName: operation.UserFullName,
-        NewValue: operation.NewValue
+        Data: operation.Data,
+        Desc: operation.Desc
         }
     return newOperation
 }

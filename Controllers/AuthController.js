@@ -87,11 +87,11 @@ exports.login = asyncHandler(async (req, res, next) => {
 
 })
 exports.logout = asyncHandler(async (req, res, next) => {
-    console.log(req.cookies);
+    // console.log(req.cookies);
 
-    if (!req.cookies.token) {
-        return next(new AppError(401, 'You are not logged in! Please log in to get access.'));
-    }
+    // if (!req.cookies.token) {
+    //     return next(new AppError(401, 'You are not logged in! Please log in to get access.'));
+    // }
     res.clearCookie('token');
     res.status(200).json({
         status: 'success',
@@ -152,7 +152,7 @@ exports.restrictTo = (roles) => {
     }
 }
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
-    const users = await managerModel.find({ Role: 'User' });
+    const users = await managerModel.find({ Role: { $ne: 'Admin' } });
     res.status(200).json({
         status: 'success',
         users
@@ -311,18 +311,16 @@ exports.validatePassword = asyncHandler(async (req, res, next) => {
         return next(new AppError(404, 'משתמש מערכת לא נמצא'))
     }
     const {manegerPassword} = req.body
-    console.log(manegerPassword);
-    console.log('2');
-    console.log(req.body);
     if (!manegerPassword) {
         return next(new AppError(400, 'סיסמה לא סופקה'))
     }
-    
+    console.log('1');
 
     const isPasswordValid = await bcrypt.compare(manegerPassword, manager.Password);
     if(!isPasswordValid)
-    
-    return next(new AppError(400, 'סיסמה לא תקינה'))
+        
+        return next(new AppError(400, 'סיסמה לא תקינה'))
+        console.log('2');
     
     res.status(200).json({
         status: 'success',

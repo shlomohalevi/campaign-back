@@ -6,7 +6,6 @@ const peopleModel = require("../models/peopleModel");
 const commitmentModel2 = require("../models/commitmentsModel")
 
 exports.addCampain = asyncHandler(async (req, res, next) => {
-  console.log(req.body);
 
   const { startDate, endDate, CampainName, minimumAmountForMemorialDay } = req.body;
   const hebrewStartDate = startDate.jewishDateStrHebrew;
@@ -143,7 +142,7 @@ const validateAndEnrichPeople = async (campainName, people) => {
     if (seenPeople.has(person.AnashIdentifier)) {
       return {
         ...person,
-        reason: "מזהה אנש הוכנס יותר מפעם אחת בקובץ ולכן הוכנס פעם אחת בלבד",
+        reason: "מזהה אנש הוכנס יותר מפעם אחת בקובץ ",
       };
     }
 

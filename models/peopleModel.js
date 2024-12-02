@@ -9,21 +9,28 @@ const operetionsSchema = new mongoose.Schema({
   },
   OperationType: {
     type: String,
-    required: [true, 'Operation Type is required']
+    enum : ['הוספה', 'עריכה', 'מחיקה'],
+    required: [true, 'Operation Type is required'],
+
   },
-  OldValue: {
+  Desc: {
+    type: String,
+    required: [true, 'description is required'],
+
+  },
+  Data:
+  {
     type: mongoose.Schema.Types.Mixed,
-    default: ''
+    required: [true, 'Operation Details is required'],
   },
-  NewValue: {
-    type: mongoose.Schema.Types.Mixed,
-    default: ''
-  },
+
   UserFullName: {
     type: String,
     required: [true, 'UserFullName is required'],
   }
 });
+
+
 
 
 const peopleSchema = new mongoose.Schema({
@@ -162,6 +169,11 @@ const peopleSchema = new mongoose.Schema({
     default: ''
   }
   ,
+  Rank: {
+    type: String,
+    default: ''
+  }
+  ,
   Campaigns: [{
     type: String,
     ref: 'Campaign',
@@ -174,12 +186,10 @@ const peopleSchema = new mongoose.Schema({
     }
 }]
 ,
-  Operations: [operetionsSchema]
-  ,
-  Rank: {
-    type: String,
-    default: ''
-  }
+AlfonOperations : [operetionsSchema],
+
+CommitmentsOperations: [operetionsSchema],
+PaymentsOperations : [operetionsSchema],
 
 
 });
