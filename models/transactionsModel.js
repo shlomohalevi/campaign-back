@@ -1,23 +1,30 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  TransactionId: {
-    type: Number,
-    required: [true, 'Transaction Number is required'],
-    unique: true
-  },
+  PaymentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment',
+    validate: {
+      validator: function (value) {
+        if(this.TransactionType === 'הכנסה'&& !value) {
+          return false;
+    }
+    return true;
+      },
+      message: 'PaymentId is required for "הכנסה" transactions'
+    }
+    
+    
+  }
+  ,
   Date: {
     type: Date,
     // required: [true, 'Date is required']
   },
-  OperationType: {
+  TransactionType: {
     type: String,
-    enum: ['Addition', 'Edit', 'deletion']
+    enum: ['הכנסה', 'הוצאה']
     // required: [true, 'Operation Type is required']
-  },
-  Location: {
-    type: String,
-    // required: [true, 'Location is required']
   },
   User: {
     type: mongoose.Schema.Types.ObjectId,

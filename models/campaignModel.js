@@ -52,7 +52,7 @@ campaignSchema.pre('save', async function (next) {
 
   if (overlappingCampaign) {
     // If an overlapping campaign is found, throw an error
-    return next(new Error(`The campaign "${overlappingCampaign.campaignName}" has overlapping dates.`));
+    return next(new Error(`תאריכים חופפים עם ${overlappingCampaign.CampainName}`));
   }
 
   // Proceed with saving if no overlap is found

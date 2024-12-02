@@ -22,6 +22,23 @@ const pettyCashSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'TransactionDate is required']
   },
+  PaymentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment',
+    // validate: {
+    //   validator: function (value) {
+    //     if(this.TransactionType === 'הכנסה'&& !value) {
+    //       return false;
+    // }
+    // return true;
+    //   },
+    //   message: 'PaymentId is required for "הכנסה" transactions'
+    // }
+    
+    
+  }
+
+  
 });
 
 const PettyCash = mongoose.models.PettyCash || mongoose.model('PettyCash', pettyCashSchema);
