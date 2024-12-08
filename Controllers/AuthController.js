@@ -314,13 +314,11 @@ exports.validatePassword = asyncHandler(async (req, res, next) => {
     if (!manegerPassword) {
         return next(new AppError(400, 'סיסמה לא סופקה'))
     }
-    console.log('1');
 
     const isPasswordValid = await bcrypt.compare(manegerPassword, manager.Password);
     if(!isPasswordValid)
         
         return next(new AppError(400, 'סיסמה לא תקינה'))
-        console.log('2');
     
     res.status(200).json({
         status: 'success',

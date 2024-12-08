@@ -25,9 +25,9 @@ const paymentSchema = new mongoose.Schema({
     required: [true, 'Amount Number is required']
   },
   PaymentMethod: {
-    type: String,enum:
-    ['מזומן', 'שיקים','העברה בנקאית',
-      'הבטחה','משולב','כרטיס אשראי','שיקים','לא סופק','הוראת קבע','אשראי הו"ק'],
+    type: String,
+    enum:  ['מזומן', 'שיקים','העברה בנקאית',
+      'הבטחה','משולב','כרטיס אשראי','שיקים','לא סופק','הוראת קבע','אשראי הו"ק','קיזוז','החזר תשלום'],
     required: [true, 'PaymentMethod is required']
   },
   CampainName: {

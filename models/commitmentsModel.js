@@ -50,8 +50,8 @@ const commitmentSchema = new mongoose.Schema({
   },
   PaymentMethod: {
     type: String,
-    enum: ['מזומן', 'שיקים','העברה בנקאית',
-      'הבטחה','משולב','כרטיס אשראי','לא סופק','הוראת קבע','אשראי הו"ק'],
+    enum:  ['מזומן', 'שיקים','העברה בנקאית',
+      'הבטחה','משולב','כרטיס אשראי','שיקים','לא סופק','הוראת קבע','אשראי הו"ק','קיזוז'],
     required: [true, 'Payment Method is required']
   },
   Notes: {

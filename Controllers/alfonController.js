@@ -203,7 +203,7 @@ exports.getPeople = asyncHandler(async (req, res, next) => {
     .find(query)
     .select(
       "AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id"
-    );
+    ).sort("AnashIdentifier");
   res.status(200).json({
     status: "success",
     data: {
@@ -335,9 +335,15 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
 });
 
 exports.addPerson = asyncHandler(async (req, res, next) => {
+  const AnashIdentifier = req.body.AnashIdentifier;
+  const existingUser = await peopleModel.findOne({ AnashIdentifier: AnashIdentifier });
+  if (existingUser) {
+    return next(new AppError(400,"משתמש כבר קיים במערכת"));
+  }
+  
   const newPerson = await peopleModel.create(req.body);
   if (!newPerson) {
-    return next(new AppError("שגיאה ביצירת משתמש", 404));
+    return next(new AppError(404,"שגיאה ביצירת משתמש"));
   }
   res.status(201).json({
     status: "success",
