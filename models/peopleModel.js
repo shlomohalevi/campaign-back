@@ -9,7 +9,7 @@ const operetionsSchema = new mongoose.Schema({
   },
   OperationType: {
     type: String,
-    enum : ['הוספה', 'עריכה', 'מחיקה'],
+    // enum : ['הוספה', 'עריכה', 'מחיקה'],
     required: [true, 'Operation Type is required'],
 
   },
@@ -73,6 +73,10 @@ const peopleSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  FatherId: {
+    type: String,
+    default: ''
+  },
   FullNameForLists: {
     type: String,
     default: ''
@@ -111,7 +115,6 @@ const peopleSchema = new mongoose.Schema({
   },
   PersonID: {
     type: String,
-    // default: '',
     sparse: true,
     unique: true,
     trim: true
@@ -165,6 +168,10 @@ const peopleSchema = new mongoose.Schema({
   }
   ,
   zipCode: {
+    type: String,
+    default: ''
+  },
+  Entry: {
     type: String,
     default: ''
   }

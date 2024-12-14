@@ -11,14 +11,17 @@ router.route('/get-eligible-people/:campainName').get( authController.protect,no
 router.route('/delete-memorial-day').delete( authController.protect,normalizeQueryParams, commitmentController.DeleteMemorialDay);
 router.route('/review-commitments').post( authController.protect, normalizeQueryParams, commitmentController.reviewCommitments);
 router.route('/upload-commitments').post( authController.protect,normalizeQueryParams, commitmentController.uploadCommitments);
-router.route('/review-commitment-payments').post(  authController.protect,normalizeQueryParams, commitmentController.reviewCommitmentPayments);
-router.route('/upload-commitment-payments').post( authController.protect,normalizeQueryParams, commitmentController.uploadPayments);
+// router.route('/review-commitment-payments').post(  authController.protect,normalizeQueryParams, commitmentController.reviewCommitmentPayments);
+// router.route('/upload-commitment-payments').post( authController.protect,normalizeQueryParams, commitmentController.uploadPayments);
 router.route('/getCommitmentsByCampaign').get( authController.protect,normalizeQueryParams, commitmentController.getCommitmentsByCampaign)
 router.route('/update-commitment-details').post( authController.protect,normalizeQueryParams, commitmentController.updateCommitmentDetails);
-router.route('/upload-commitment-payment').post( authController.protect,normalizeQueryParams, commitmentController.uploadCommitmentPayment);
-router.route('/delete-payment/:paymentId').delete( authController.protect,authController.restrictTo(['Admin', 'User']),
- commitmentController.deletePayment)
+// router.route('/upload-commitment-payment').post( authController.protect,normalizeQueryParams, commitmentController.uploadCommitmentPayment);
+// router.route('/delete-payment/:paymentId').delete( authController.protect,authController.restrictTo(['Admin', 'User']),
+//  commitmentController.deletePayment)
 router.route('/delete-commitment/:commitmentId').delete( authController.protect,normalizeQueryParams, commitmentController.deleteCommitment)
+// router.route('/get-payments-without-commitment').get( authController.protect,normalizeQueryParams, commitmentController.getPaymentsWithoutCommitment)
+// router.route('/transfer-payment').put( authController.protect,normalizeQueryParams, commitmentController.transferPayment)
+router.route('/get-campain-incom-by-payment-method').get( normalizeQueryParams, commitmentController.getCampainIncomSummeryByPaymentMethod)
 
 
 

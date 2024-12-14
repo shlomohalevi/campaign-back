@@ -9,6 +9,7 @@ const {
 
 exports.uploadPeople = asyncHandler(async (req, res, next) => {
   const people = req.body;
+  
 
   // Early return if no data is provided
   if (!Array.isArray(people) || people.length === 0) {
@@ -106,6 +107,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
     if(!person.FirstName || !person.LastName) 
     {
       invalidPeople.push({ ...person, reason: "שם פרטי או שם משפחה לא סופקו" });
+      continue;
 
     }
 
@@ -168,7 +170,6 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       validPeople.push(person); // No existing match, valid person
     }
   }
-
   // Return feedback
   res.status(200).json({ validPeople, invalidPeople, conflictedPeople });
 });
@@ -177,19 +178,21 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
 function comparePersonData(existingPerson, uploadedPerson) {
   const uploadedConflicts = {};
   const existingConflicts = {};
-
-  for (const key of Object.keys(uploadedPerson)) {
-    if (existingPerson[key] != uploadedPerson[key]) {
-      uploadedConflicts[key] = uploadedPerson[key];
-      existingConflicts[key] = existingPerson[key];
-    }
-  }
-
-  return Object.keys(uploadedConflicts).length > 0
-    ? { uploaded: uploadedConflicts, existing: existingConflicts }
-    : null;
-}
   
+  if (uploadedPerson.AnashIdentifier == '5104')
+  {
+    console.log(existingPerson);
+  }
+  
+  for (const key of Object.keys(uploadedPerson)) {
+      if ( key in existingPerson&& existingPerson[key] && existingPerson[key] != uploadedPerson[key]) {
+          uploadedConflicts[key] = uploadedPerson[key];
+          existingConflicts[key] = existingPerson[key];
+      }
+  }
+  
+  return Object.keys(uploadedConflicts).length > 0 ? { uploaded: uploadedConflicts, existing: existingConflicts } : null;
+}  
   
 
 exports.getPeople = asyncHandler(async (req, res, next) => {
@@ -200,10 +203,8 @@ exports.getPeople = asyncHandler(async (req, res, next) => {
   const query = isActive !== undefined ? { isActive: isActive } : {};
 
   const people = await peopleModel
-    .find(query)
-    .select(
-      "AnashIdentifier FirstName LastName Address AddressNumber City MobilePhone HomePhone CommitteeResponsibility PartyGroup DonationMethod GroupNumber Classification isActive PersonID -_id"
-    ).sort("AnashIdentifier");
+    .find(query).
+    sort("AnashIdentifier");
   res.status(200).json({
     status: "success",
     data: {
