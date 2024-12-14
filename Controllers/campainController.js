@@ -44,9 +44,9 @@ exports.getPeopleByCampain = asyncHandler(async (req, res, next) => {
     // console.log(people)
 
     // If no people are found, return a 404 status
-    if (!people || people.length === 0) {
-      return next(new AppError(404, "No people found"));
-    }
+    // if (!people || people.length === 0) {
+    //   return next(new AppError(404, "No people found"));
+    // }
 
     // Return the list of people
     res.status(200).json(people);

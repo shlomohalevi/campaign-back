@@ -10,9 +10,9 @@ const normalizeQueryParams = (req, res, next) => {
       } else if (req.query[key] === 'undefined') {
         req.query[key] = undefined;
       }
-      if (typeof req.query[key] === 'string') {
-        req.query[key] = req.query[key].trim();
-      }
+      // if (typeof req.query[key] === 'string') {
+      //   req.query[key] = req.query[key].trim();
+      // }
     }
   
     next();

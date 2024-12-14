@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors')
 const uploadsRouter = require('./Routes/uploadRouts')
 const commitmentRoute = require('./Routes/commitmentRoute')
+const paymentRoute = require('./Routes/PaymentsRoute')
 const campainRoute = require('./Routes/campainsRoute')
 const transactionRoute = require('./Routes/transactionRoute')
 const globalErrorHandler = require('./utils/GlobalErrorHandler')
@@ -27,7 +28,7 @@ app.use(cookieParser())
 
 app.use('/api/alfon', uploadsRouter);
 app.use('/api/commitment', commitmentRoute);
-app.use('/api/payment', commitmentRoute);
+app.use('/api/payments', paymentRoute);
 app.use('/api/campain', campainRoute);
 app.use('/api/transaction', transactionRoute);
 app.use('/api/auth', authRoute);
