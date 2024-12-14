@@ -6,6 +6,7 @@ const People = require("../models/peopleModel");
 const pettyCash = require("../models/pettyCashModel");
 const AppError = require("../utils/AppError");
 
+
 const {
   recordAddOperation,
   recordNewPaymentOperation,
@@ -16,11 +17,7 @@ const { default: mongoose } = require("mongoose");
 const validPaymentMethods = [
   'מזומן', , 'העברה בנקאית', 'הבטחה',
   'משולב', 'כרטיס אשראי', 'שיקים', 'לא סופק',
-  'הוראת קבע', 'אשראי הו"ק', 'קיזוז', 'החזר תשלום'
-];
-
-const negativeValidPaymentMethods = [
-  'הוראת קבע', 'אשראי הו"ק'
+  'הוראת קבע', 'אשראי הו"ק', 'קיזוז', 'החזר תשלום','החזר תשלום מזומן'
 ];
 
 
@@ -78,10 +75,6 @@ const validateCommitmentFields = (commitment, isUpdate) => {
 
   return null;  // Return null if all validations pass
 };
-
-
-
-
 
 
 exports.reviewCommitments = asyncHandler(async (req, res, next) => {
@@ -213,6 +206,8 @@ exports.reviewCommitments = asyncHandler(async (req, res, next) => {
     invalidCommitments,
   });
 });
+
+
 exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
   const commitment = req.body;
   const session = await mongoose.startSession();
@@ -293,18 +288,7 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
   } finally {
     session.endSession();
   }
-});
-
-
-
-
-
-
-
-
-
-
-
+})
 
 
 exports.uploadCommitments = asyncHandler(async (req, res, next) => {
@@ -386,587 +370,32 @@ exports.uploadCommitments = asyncHandler(async (req, res, next) => {
   }
 });
 
-function validatePaymentFields(paymentAmount, commitment) {
-  // Convert fields to numbers (in case they are strings or undefined)
-  const amountPaid = Number(commitment.AmountPaid ?? 0);
-  const commitmentAmount = Number(commitment.CommitmentAmount ?? 0);
-  const paymentsMade = Number(commitment.PaymentsMade ?? 0);
-  const paymentsRemaining = Number(commitment.PaymentsRemaining ?? 0);
-  const numberOfPayments = Number(commitment.NumberOfPayments ?? 0);
-  console.log(paymentAmount)
-
-  // Updated values
-  const updatedAmountPaid = amountPaid + paymentAmount;
-  const updatedAmountRemaining = commitmentAmount - updatedAmountPaid;
-  const updatedPaymentsMade = paymentAmount > 0 ? paymentsMade + 1 : paymentsMade - 1;
-  const updatedPaymentsRemaining = paymentAmount > 0 ? paymentsRemaining - 1 : paymentsRemaining + 1;
-
-  console.log(updatedAmountRemaining);
-
-  // Validation checks
-  if (updatedAmountPaid > commitmentAmount) {
-    return "סך התשלום חורג מסכום ההתחייבות";
-  }
-  if (updatedAmountRemaining < 0) {
-    return 'סכום התשלום שנותר קטן מ-0';
-  }
-  if (updatedAmountRemaining > commitmentAmount) {
-    return 'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות';
-  }
-  if (numberOfPayments && updatedPaymentsMade > numberOfPayments) {
-    return 'מספר התשלומים בפועל לא יכול לעלות על מספר התשלומים הכולל';
-  }
-  if (numberOfPayments && updatedPaymentsRemaining < 0) {
-    return 'מספר התשלומים הנותרים לא יכול להיות פחות מאפס';
-  }
-  if (numberOfPayments && updatedPaymentsRemaining > numberOfPayments) {
-    return 'מספר התשלומים שנותרו גדול מסך התשלומים';
-  }
-
-  return null;  // No errors, validation passed
-}
 
 
 
 
 exports.reviewCommitmentPayments = async (req, res, next) => {
-  let paymentsData = Array.isArray(req.body.data) ? req.body.data : [req.body.data];
-  let campainName = req.body.campainName;
-  const validPayments = [];
-  const invalidPayments = [];
-  const activePeople = await People.find({ isActive: true });
-  const activePeopleMap = new Map(
-    activePeople.map((person) => [person.AnashIdentifier, person])
-
-  );
-
-  const enrichedPayments = paymentsData.map((payment) => {
-    if (!payment.AnashIdentifier) {
-      return { ...payment, reason: " מזהה אנש לא סופק" };
-    }
-    payment.AnashIdentifier = String(payment.AnashIdentifier);
-
-    const person = activePeopleMap.get(payment.AnashIdentifier);
-
-    if (!person) {
-      return { ...payment, reason: " מזהה אנש לא קיים במערכת או לא פעיל " };
-    }
-    if (!payment.CampainName && !campainName) {
-      console.log(payment.CampainName);
-      return { ...payment, reason: "שם קמפיין לא סופק" };
-    }
-    payment.CampainName = payment.CampainName || campainName;
-
-    if (!payment.Amount) {
-      return { ...payment, reason: "סכום התשלום לא סופק" };
-    }
-    if (payment.Amount == 0) {
-      return { ...payment, reason: "סכום התשלום לא יכול להיות 0" };
-    }
-    if (!payment.PaymentMethod || !validPaymentMethods.includes(payment.PaymentMethod)) {
-      return { ...payment, reason: "אופן התשלום לא תקין" };
-    }
-    if(payment.PaymentMethod === 'מזומן' && payment.Amount < 0)
-    {
-      return { ...payment, reason: "אין אפשרות לביצוע החזר מזומן בקבצים (רק באופן ידני באתר)"};
-    }
-    payment.FirstName = person.FirstName || payment.FirstName;
-    payment.LastName = person.LastName || payment.LastName;
-
-
-    return payment;
-  });
-
-
-
-
-
-
-
-
-  const filteredPayments = enrichedPayments.filter((payment) => {
-    if (payment.reason) {
-      invalidPayments.push(payment);
-      return false;
-    }
-    return true;
-  });
-  // const uniqueCampaignNames = [...new Set(filteredPayments.map(p => p.CampainName))];
-  const allCampaigns = await campainModel.find();
-  const campaignMap = new Map(allCampaigns.map((campaign) => [campaign.CampainName, campaign]));
-  const commitments = await commitmentsModel.find();
-
-
-
-  for (const payment of filteredPayments) {
-    const paymentCampain = campaignMap.get(payment.CampainName);
-    if (!paymentCampain) {
-      invalidPayments.push({
-        ...payment,
-        reason: "שם קמפיין לא קיים במערכת",
-      });
-      continue;
-    }
-    const commitment = getCommitmentOfPayment(payment, commitments);
-    if (!commitment) {
-      invalidPayments.push({
-        ...payment,
-        reason: "התחייבות לא קיימת במערכת",
-      });
-      continue;
-    }
-    const fieldError = validatePaymentFields(payment.Amount, commitment);
-    if (fieldError) {
-      invalidPayments.push({
-        ...payment,
-        reason: fieldError,
-      });
-      continue;
-    }
-    validPayments.push(payment);
-  }
-  res.status(200).json({
-    status: "success",
-    validPayments,
-    invalidPayments,
-  });
-}
-
-exports.uploadPayments = asyncHandler(async (req, res, next) => {
-  const session = await mongoose.startSession();
-
   try {
-    session.startTransaction();
+    const paymentsData = Array.isArray(req.body.data) ? req.body.data : [req.body.data];
+    const campainName = req.body.campainName;
 
-    // Extract the payments from the request body
-    const payments = Array.isArray(req.body) ? req.body : [req.body];
+    const {
+      validPaymentsWithCommitment,
+      validPaymentsWithoutCommitment,
+      invalidPayments,
+    } = await reviewCommitmentPaymentsService(paymentsData, campainName);
 
-    // Get all unique commitment IDs from the payments
-    const commitmentIds = [...new Set(payments.map(payment => payment.CommitmentId))];
-
-    // Fetch all relevant commitments in a single query (within the session)
-    const relevantCommitments = await commitmentsModel.find({
-      _id: { $in: commitmentIds }
-    }).session(session);
-
-    // Create a map for faster commitment lookup
-    const commitmentMap = new Map(
-      relevantCommitments.map(commitment => [commitment._id.toString(), commitment])
-    );
-
-    // Get all relevant people based on the AnashIdentifiers from the commitments
-    const anashIdentifiers = relevantCommitments.map(commitment => commitment.AnashIdentifier);
-
-    // Fetch all people in one query using the AnashIdentifiers
-    const people = await People.find({
-      AnashIdentifier: { $in: anashIdentifiers }
-    }).session(session);
-
-    // Create a map for faster person lookup
-    const peopleMap = new Map(
-      people.map(person => [person.AnashIdentifier, person])
-    );
-
-    // Prepare commitments to update and valid payments to insert
-    const commitmentsToUpdate = new Map();
-    const validPayments = [];
-    const peopleBulkUpdates = [];
-    const pettyCashInsertions = [];
-    const pettyCashDeletions = [];
-
-
-    for (const payment of payments) {
-      const commitment = commitmentMap.get(payment.CommitmentId.toString());
-
-      if (commitment) {
-        // Prepare payment for insertion
-        payment.CommitmentId = commitment._id;
-        validPayments.push(payment);
-
-        // Aggregate updates for each commitment
-        if (!commitmentsToUpdate.has(commitment._id.toString())) {
-          commitmentsToUpdate.set(commitment._id.toString(), {
-            _id: commitment._id,
-            PaymentsRemaining: commitment.PaymentsRemaining,
-            AmountRemaining: commitment.AmountRemaining,
-            AmountPaid: commitment.AmountPaid,
-            PaymentsMade: commitment.PaymentsMade,
-            NumberOfPayments: commitment.NumberOfPayments
-          });
-        }
-
-        const updateData = commitmentsToUpdate.get(commitment._id.toString());
-        updateData.AmountRemaining -= payment.Amount;
-        updateData.AmountPaid += payment.Amount;
-        updateData.PaymentsRemaining = updateData.NumberOfPayments ? payment.Amount > 0 ? updateData.PaymentsRemaining - 1 : updateData.PaymentsRemaining + 1 : updateData.PaymentsRemaining;
-        updateData.PaymentsMade = payment.Amount > 0 ? updateData.PaymentsMade + 1 : updateData.PaymentsMade - 1
-
-        // Lookup the person using the optimized map
-        const person = peopleMap.get(commitment.AnashIdentifier);
-
-        if (person) {
-
-
-          if (payment.PaymentMethod === "מזומן"&& payment.Amount > 0) {
-            const fullName = `${commitment.FirstName} ${commitment.LastName}`;
-            const { Amount, AnashIdentifier, Date: paymentDate } = payment;
-            const Type = "הכנסה";
-            pettyCashInsertions.push({
-              FullNameOrReasonForIssue: fullName,
-              AnashIdentifier: AnashIdentifier,
-              TransactionType: Type,
-              Amount: Amount,
-              TransactionDate: paymentDate,
-              PaymentId: payment._id
-            });
-          }
-
-           
-
-      
-          // Record the payment operation for this person
-          const recordedOperation = recordAddOperation({
-            OperationType: "הוספה", // Operation type in Hebrew (Payment for commitment)
-            Data: payment, // Payment details
-            Desc: `הוספת תשלום להתחייבות ${commitment.CampainName} בסך ${payment.Amount} ש"ח`,
-            Date: new Date(), // Current date and time
-            UserFullName: req.user?.FullName // User triggering the operation
-          });
-
-          const update = {
-            $push: {
-              PaymentsOperations: {
-                $each: [recordedOperation],
-                $slice: -20,
-              },
-            },
-          };
-
-          peopleBulkUpdates.push({
-            updateOne: {
-              filter: { _id: person._id },
-              update,
-            },
-          });
-        }
-      }
-
-     
-    }
-
-
-
-    // If no valid payments, return an error
-    if (validPayments.length === 0) {
-      throw new AppError(404, "No valid payments to upload");
-    }
-
-    const bulkUpdates = Array.from(commitmentsToUpdate.values()).map(updateData => ({
-      updateOne: {
-        filter: { _id: updateData._id },
-        update: {
-          $set: {
-            PaymentsRemaining: updateData.PaymentsRemaining,
-            AmountRemaining: updateData.AmountRemaining,
-            AmountPaid: updateData.AmountPaid,
-            PaymentsMade: updateData.PaymentsMade
-          }
-        }
-      }
-    }));
-
-    if (pettyCashInsertions.length > 0) {
-      await pettyCash.insertMany(pettyCashInsertions, { session });
-    }
-    // Insert valid payments into the paymentModel collection
-    await paymentModel.insertMany(validPayments, { session });
-
-
-
-    // Execute bulk updates for commitments
-    await commitmentsModel.bulkWrite(bulkUpdates, { session });
-
-    await People.bulkWrite(peopleBulkUpdates, { session });
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({ message: "Payments uploaded successfully" });
-  }
-  catch (error) {
-    // Roll back the transaction in case of error
-    await session.abortTransaction();
-    session.endSession();
+    res.status(200).json({
+      status: "success",
+      validPaymentsWithCommitment,
+      validPaymentsWithoutCommitment,
+      invalidPayments,
+    });
+  } catch (error) {
     next(error);
   }
-});
+};
 
-
-exports.uploadCommitmentPayment = asyncHandler(async (req, res, next) => {
-  const session = await mongoose.startSession(); // Start a session for the transaction
-  session.startTransaction(); // Begin the transaction
-
-  try {
-    const payment = req.body;
-    const person = await People.findOne({ AnashIdentifier: payment.AnashIdentifier, isActive: true }).session(session);
-
-    if (!person) {
-      return next(new AppError(400, 'מזהה אנש לא קיים במערכת או לא פעיל'));
-    }
-
-    if (!payment) {
-      return next(new AppError(400, 'לא נשלח תשלום'));
-    }
-    if (!payment.PaymentMethod || !validPaymentMethods.includes(payment.PaymentMethod)) {
-      return next(new AppError(400, ' אופן תשלום לא תקין '));
-    }
-
-    const commitment = await commitmentsModel.findOne({
-      AnashIdentifier: payment.AnashIdentifier,
-      CampainName: payment.CampainName
-    }).session(session);
-
-    if (!commitment) {
-      return next(new AppError(400, 'התחייבות לא קיימת במערכת'));
-    }
-
-    payment.CommitmentId = commitment._id;
-    const fieldError = validatePaymentFields(payment.Amount, commitment);
-    if (fieldError) {
-      return next(new AppError(400, fieldError));
-    }
-
-    // Create the payment
-    const newPayment = await paymentModel.create([payment], { session }); // Pass session to ensure it's part of the transaction
-    console.log(commitment);
-
-
-    // Update the commitment fields
-    commitment.AmountPaid += parseFloat(payment.Amount);
-    commitment.AmountRemaining -= parseFloat(payment.Amount);
-    commitment.PaymentsRemaining = commitment.NumberOfPayments ? payment.Amount > 0 ? commitment.PaymentsRemaining - 1 : commitment.PaymentsRemaining + 1 : commitment.PaymentsRemaining;
-    commitment.PaymentsMade = payment.Amount > 0 ? commitment.PaymentsMade + 1 : commitment.PaymentsMade - 1
-
-    // Save the updated commitment
-    const updatedCommitment = await commitment.save({ session });
-
-
-
-    if (payment?.PaymentMethod === "מזומן") {
-
-      if (payment?.Amount > 0) {
-
-        const fullName = `${commitment.FirstName} ${commitment.LastName}`;
-        const { Amount, AnashIdentifier, Date: paymentDate } = payment;
-        const Type = "הכנסה";
-        const Transaction = {
-          FullNameOrReasonForIssue: fullName,
-          AnashIdentifier: AnashIdentifier,
-          Amount: Amount,
-          TransactionDate: paymentDate,
-          TransactionType: Type,
-          PaymentId: newPayment[0]._id
-        };
-        const CreatedTransaction = await pettyCash.create([Transaction], { session });
-      }
-      else {
-        const paymentInPettyCash = await pettyCash.findOne({ AnashIdentifier: AnashIdentifier, Amount: -payment.Amount, TransactionType: "הכנסה" }).session(session);
-        if (paymentInPettyCash) {
-          await pettyCash.findOneAndDelete({ PaymentId: payment._id }, { session })
-        }
-        else {
-          return next(new AppError(400, 'תשלום לא קיים בקופה קטנה'));
-        }
-
-
-      }
-
-
-
-    }
-
-    const recordedOperation = recordAddOperation({
-      OperationType: payment.Amount > 0 ? "הוספה" : "מחיקה",
-      Desc: payment.Amount > 0 ? "הוספת תשלום להתחייבות לקמפיין " + commitment.CampainName + " סך תשלום " + payment.Amount + " ש" + "ח" : "החזר תשלום",
-      Data: payment, // Payment details
-      Date: new Date(), // Current date and time
-      UserFullName: req.user?.FullName // User triggering the operation
-    });
-
-    // Add the recorded operation to the person's PaymentsOperations array
-    await People.updateOne(
-      { AnashIdentifier: commitment.AnashIdentifier },
-      {
-        $push: {
-          PaymentsOperations: {
-            $each: [recordedOperation],
-            $slice: -20, // Limit to the latest 20 operations
-          }
-        }
-      },
-      { session }
-    );
-
-
-
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({
-      status: "success",
-      newPayment: newPayment[0],
-      updatedCommitment,
-    });
-  } catch (error) {
-    // Abort the transaction in case of error
-    await session.abortTransaction();
-    session.endSession();
-    return next(new AppError(500, "Transaction failed: " + error.message));
-  }
-});
-function validateDeletePaymentFields(paymentAmount,commitment) {
-    const amountPaid = Number(commitment.AmountPaid ?? 0);
-    const commitmentAmount = Number(commitment.CommitmentAmount ?? 0);
-    const paymentsMade = Number(commitment.PaymentsMade ?? 0);
-    const paymentsRemaining = Number(commitment.PaymentsRemaining ?? 0);
-    const numberOfPayments = Number(commitment.NumberOfPayments ?? 0);
-    console.log(paymentAmount)
-    console.log(amountPaid)
-  
-    // Updated values
-    const updatedAmountPaid = amountPaid - paymentAmount;
-    const updatedAmountRemaining = commitmentAmount - updatedAmountPaid;
-    const updatedPaymentsMade = paymentAmount > 0 ? paymentsMade - 1 : paymentsMade + 1;
-    const updatedPaymentsRemaining = paymentAmount > 0 ? paymentsRemaining + 1 : paymentsRemaining - 1;
-  
-  
-    // Validation checks
-    if (updatedAmountPaid > commitmentAmount) {
-      return "סך התשלום חורג מסכום ההתחייבות";
-    }
-    if (updatedAmountRemaining < 0) {
-      return 'סכום התשלום שנותר קטן מ-0';
-    }
-    if (updatedAmountRemaining > commitmentAmount) {
-      return 'הסכום שנותר לתשלום לא יכול לחרוג מסכום ההתחייבות';
-    }
-    if (numberOfPayments && updatedPaymentsMade > numberOfPayments) {
-      return 'מספר התשלומים בפועל לא יכול לעלות על מספר התשלומים הכולל';
-    }
-    if (numberOfPayments && updatedPaymentsRemaining < 0) {
-      return 'מספר התשלומים הנותרים לא יכול להיות פחות מאפס';
-    }
-    if (numberOfPayments && updatedPaymentsRemaining > numberOfPayments) {
-      return 'מספר התשלומים שנותרו גדול מסך התשלומים';
-    }
-  
-    return null;  // No errors, validation passed
-  
-  
-}
-exports.deletePayment = asyncHandler(async (req, res, next) => {
-  const session = await mongoose.startSession(); // Start a transaction session
-  session.startTransaction(); // Begin the transaction
-
-  try {
-    const paymentId = req.params.paymentId;
-
-    const payment = await paymentModel.findById(paymentId).session(session);
-    // console.log(payment);
-    if (!payment) {
-      return next(new AppError(404, 'לא נמצא תשלום במערכת'));
-    }
-
-    const person = await People.findOne({ AnashIdentifier: payment.AnashIdentifier, isActive: true }).session(session);
-    if (!person) {
-      return next(new AppError(404, "מזהה אנש לא קיים במערכת או לא פעיל "));
-    }
-
-    const commitment = await commitmentsModel.findById(payment.CommitmentId).session(session);
-    if (!commitment) {
-      return next(new AppError(404, "התחייבות לא קיימת במערכת"));
-    }
-
-    // Delete the payment
-    const validateDeletedPaymentError = validateDeletePaymentFields(payment.Amount, commitment);
-    if (validateDeletedPaymentError) {
-      return next(new AppError(400, validateDeletedPaymentError));
-    }
-    const deletedPayment = await paymentModel.findByIdAndDelete(paymentId, { session });
-
-    if (!deletedPayment) {
-      return next(new AppError(500, "שגיאה במחיקת התשלום"));
-    }
-
-    // Update the associated commitment
-    commitment.AmountPaid =
-      commitment.AmountPaid - parseFloat(payment.Amount)
-
-
-    commitment.AmountRemaining =
-      commitment.AmountRemaining + parseFloat(payment.Amount)
-
-
-    commitment.PaymentsMade =
-      payment.Amount > 0 ? commitment.PaymentsMade - 1 : commitment.PaymentsMade + 1
-
-
-    commitment.PaymentsRemaining = commitment.NumberOfPayments
-      ? payment.Amount > 0 ? commitment.PaymentsRemaining + 1 : commitment.PaymentsRemaining - 1
-      : commitment.PaymentsRemaining;
-
-    const updatedCommitment = await commitment.save({ session });
-
-    const recordedOperation = recordDeleteOperation({
-      OperationType: "מחיקה", // Operation type in Hebrew (Delete payment)
-      Data: payment, // Payment details
-      Desc: `מחיקת תשלום מהתחייבות לקמפיין ${commitment.CampainName} בסך ${payment.Amount} ש"ח`,
-      Date: new Date(), // Current date and time
-      UserFullName: req.user?.FullName // User triggering the operation
-    });
-    console.log('33');
-
-    // Add the recorded operation to the person's PaymentsOperations array
-    await People.updateOne(
-      { AnashIdentifier: commitment.AnashIdentifier },
-      {
-        $push: {
-          PaymentsOperations: {
-            $each: [recordedOperation],
-            $slice: -20, // Limit to the latest 20 operations
-          }
-        }
-      },
-      { session }
-    );
-    if (payment?.PaymentMethod === "מזומן") {
-      const paymentInPettyCash = await pettyCash.findOne({ PaymentId: paymentId }).session(session);
-      if (paymentInPettyCash) {
-        await pettyCash.findOneAndDelete({ PaymentId: paymentId }, { session })
-      }
-    }
-    console.log('44');
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({
-      status: "success",
-      deletedPayment,
-      updatedCommitment,
-    });
-  } catch (error) {
-    console.error(error);
-    // Abort the transaction in case of error
-    await session.abortTransaction();
-    session.endSession();
-    return next(new AppError(500, "Transaction failed: " + error.message));
-  }
-});
 
 
 // פונקציה לתרגום שגיאות לעברית
@@ -1016,45 +445,14 @@ exports.getCommitmentsByCampaign = asyncHandler(async (req, res, next) => {
 
 
 
-
-
-
-// .select(
-//   "AnashIdentifier PersonID FirstName LastName CommitmentAmount AmountPaid AmountRemaining NumberOfPayments PaymentsMade PaymentsRemaining Fundraiser PaymentMethod Notes ResponseToFundraiser"
-// );
-
-function getCommitmentOfPayment(payment, commitments) {
-  const matchingCommitment = commitments.find(
-    commitment => commitment.AnashIdentifier === payment.AnashIdentifier && commitment.CampainName === payment.CampainName
-  );
-  if (matchingCommitment) {
-    payment.CommitmentId = matchingCommitment._id
-  }
-
-  return matchingCommitment;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 exports.getCommitmentById = asyncHandler(async (req, res, next) => {
   const commitmentId = req.params._id;
   const commitment = await commitmentsModel.findById(commitmentId);
-  const payments = await getCommitmentPayments(commitmentId);
+  const payments = await paymentModel.find({ CommitmentId: commitmentId }).populate({
+    path: 'AnashDetails', // Virtual field name
+    select: 'Campaigns' // Only include specific fields
+  })
+;
   if (!commitment) {
     return next(new AppError("User not found", 404));
   }
@@ -1069,16 +467,7 @@ exports.getCommitmentById = asyncHandler(async (req, res, next) => {
     });
   }
 });
-async function getCommitmentPayments(commitmentId) {
-  try {
-    const payments = await paymentModel.find({ CommitmentId: commitmentId });
-    return payments;
-  }
-  catch (err) {
-    return null;
-  }
 
-}
 exports.deleteCommitment = asyncHandler(async (req, res, next) => {
   const session = await mongoose.startSession();
 
@@ -1155,7 +544,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     next(error); // Pass the error to the global error handler
   }
 });
-
 
 
 
@@ -1335,5 +723,38 @@ exports.getCommitment = asyncHandler(async (req, res, next) => {
     data: {
       commitments,
     },
+  });
+});
+
+exports.getCampainIncomSummeryByPaymentMethod = asyncHandler(async (req, res, next) => {
+  const { campainName } = req.params;
+
+  let campain;
+  if (campainName) {
+    campain = await campainModel.findOne({ CampainName: campainName });
+    if (!campain) {
+      return next(new AppError("קמפיין לא נמצא", 404)); // 404 Not Found
+    }
+  }
+  const campainQuery = campain ? { CampainName: campainName } : {}
+  const commitments = await commitmentsModel
+    .find(campainQuery) // If campainName is undefined, find all
+  const payments = await paymentModel.find(campainQuery);
+
+  const incomsByPaymentsMethods = {}
+
+  for (const payment of payments) {
+   
+    incomsByPaymentsMethods[payment.PaymentMethod] = 
+    (incomsByPaymentsMethods[payment.PaymentMethod] || 0) + payment.Amount;
+      
+  }
+
+
+
+
+  res.status(200).json({
+    status: "success",
+    incomsByPaymentsMethods
   });
 });
