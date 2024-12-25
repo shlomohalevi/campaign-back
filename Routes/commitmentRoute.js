@@ -21,7 +21,7 @@ router.route('/update-commitment-details').post( authController.protect,normaliz
 router.route('/delete-commitment/:commitmentId').delete( authController.protect,normalizeQueryParams, commitmentController.deleteCommitment)
 // router.route('/get-payments-without-commitment').get( authController.protect,normalizeQueryParams, commitmentController.getPaymentsWithoutCommitment)
 // router.route('/transfer-payment').put( authController.protect,normalizeQueryParams, commitmentController.transferPayment)
-router.route('/get-campain-incom-by-payment-method').get( normalizeQueryParams, commitmentController.getCampainIncomSummeryByPaymentMethod)
+router.route('/get-campain-incom-by-payment-method/:campainName').get( normalizeQueryParams, commitmentController.getCampainIncomSummeryByPaymentMethod)
 
 
 
