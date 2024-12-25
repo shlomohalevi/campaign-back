@@ -7,6 +7,7 @@ const commitmentRoute = require('./Routes/commitmentRoute')
 const paymentRoute = require('./Routes/PaymentsRoute')
 const campainRoute = require('./Routes/campainsRoute')
 const transactionRoute = require('./Routes/transactionRoute')
+const reportsRoute = require('./Routes/reportsRoute')
 const globalErrorHandler = require('./utils/GlobalErrorHandler')
 const authRoute = require('./Routes/AuthRoute')
 const cookieParser = require("cookie-parser");
@@ -32,6 +33,7 @@ app.use('/api/payments', paymentRoute);
 app.use('/api/campain', campainRoute);
 app.use('/api/transaction', transactionRoute);
 app.use('/api/auth', authRoute);
+app.use('/api/reports', reportsRoute);
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'Server is active' });
 });

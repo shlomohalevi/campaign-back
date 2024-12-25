@@ -9,6 +9,8 @@ const pettyCash = require("../models/pettyCashModel");
 const AppError = require("../utils/AppError");
 const mongoose = require("mongoose");
 const { recordAddOperation, recordDeleteOperation } = require("../utils/RecordOperation");
+const { backupDatabase } = require("../backup/backups/backup");
+
 
 
 const validPaymentMethods = [
@@ -20,6 +22,7 @@ const validPaymentMethods = [
 exports.reviewCommitmentPayments = async (req, res, next) => {
     try {
       const paymentsData = Array.isArray(req.body.data) ? req.body.data : [req.body.data];
+      // console.log(paymentsData);
       const campainName = req.body.campainName;
   
       const invalidPayments = [];
@@ -34,7 +37,7 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
       const commitments = await commitmentsModel.find();
       const seenPaymentsInFile = new Map();
   
-      const existingPayments = await paymentModel.find({}).select('Date PaymentMethod AnashIdentifier Amount');
+      const existingPayments = await paymentModel.find({}).select('Date PaymentMethod AnashIdentifier Amount -_id').lean();
   
       const existingPaymentsMap = new Map(
         existingPayments.map((payment) => [
@@ -42,6 +45,8 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
           payment
         ])
       );
+      // console.log(existingPaymentsMap);
+      // console.log(paymentsData);
   
       const enrichedPayments = paymentsData.map((payment) => {
         if (!payment.AnashIdentifier) {
@@ -79,9 +84,10 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
         if (payment.PaymentMethod === "מזומן" && payment.Amount < 0) {
           return { ...payment, reason: "אין אפשרות לביצוע החזר מזומן בקבצים (רק באופן ידני באתר)" };
         }
-  
+        
         if (payment.CampainName) {
           const commitment = getCommitmentOfPayment(payment, commitments);
+          // console.log(payment);
           if (!commitment) {
             return { ...payment, reason: `לא קיים לאנש זה התחייבות לקמפיין ${payment.CampainName}` };
           }
@@ -90,12 +96,13 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
             return { ...payment, reason: fieldError };
           }
         }
-  
+        // console.log(payment);
+        
         const { Date: paymentDate, PaymentMethod, AnashIdentifier, Amount } = payment;
         if (!paymentDate) {
           return { ...payment, reason: "תאריך התשלום לא סופק" };
         }
-  
+        
         const key = `${new Date(paymentDate).toISOString().split('T')[0]}-${PaymentMethod}-${AnashIdentifier}-${Amount}`;
   
         if (seenPaymentsInFile.has(key)) {
@@ -105,7 +112,7 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
           return { ...payment, reason: "תשלום כפול כבר קיים במערכת" };
         }
         seenPaymentsInFile.set(key, true);
-  
+        
         payment.FirstName = person.FirstName || '';
         payment.LastName = person.LastName || '';
   
@@ -119,6 +126,7 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
         }
         return true;
       });
+      // console.log(enrichedPayments);
   
       const validPaymentsWithCommitment = filteredPayments.filter((payment) => payment.CampainName);
       const validPaymentsWithoutCommitment = filteredPayments.filter((payment) => !payment.CampainName);
@@ -139,6 +147,7 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
   
     try {
       session.startTransaction();
+
   
       const payments = Array.isArray(req.body) ? req.body : [req.body];
       const paymentsWithCommitment = payments.filter(payment => payment.CampainName);
@@ -381,13 +390,10 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
       payment.FirstName = person.FirstName || '';
       payment.LastName = person.LastName || '';
       const newPayment = await paymentModel.create([payment], { session }); // Create payment in transaction
-        console.log(payment);
       // Handle Petty Cash
       if (payment.PaymentMethod === 'מזומן'|| payment.PaymentMethod === 'החזר תשלום מזומן') {
-        console.log('0');
 
         if (payment.Amount > 0) {
-          console.log('4');
           const fullName = `${person.FirstName} ${person.LastName}`;
           const pettyCashTransaction = {
             FullNameOrReasonForIssue: fullName,
@@ -400,18 +406,14 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
           await pettyCash.create([pettyCashTransaction], { session });
         }
          else {
-          console.log('1');
           const pettyCashPayment = await pettyCash.findOne({
             AnashIdentifier: payment.AnashIdentifier,
             Amount: -payment.Amount,
             TransactionType: 'הכנסה',
           }).session(session);
           if (pettyCashPayment) {
-            console.log('2');
           const res =  await pettyCash.findOneAndDelete({ PaymentId: pettyCashPayment.PaymentId }, { session });
-          // console.log(res);
           } else {
-            console.log('3');
             throw new AppError(400, 'תשלום לא קיים בקופה קטנה');
           }
         }
@@ -568,7 +570,6 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
   exports.transferPayment = asyncHandler(async (req, res, next) => {
     const { paymentId, campainName } = req.body; // Extract parameters from the request
     const user = req.user; // Assuming the user info is in req.user (e.g., from authentication middleware)
-    console.log(req.body);
     if (!paymentId || !campainName) {
       return next(new AppError(400, "PaymentId and campainName are required."));
     }
