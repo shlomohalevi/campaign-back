@@ -5,35 +5,50 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const cron = require('node-cron');
+const { console } = require('inspector');
 
 // MongoDB connection details
 const DB_URI = process.env.DB_URI;
 const DB_NAME = process.env.DB_NAME;
 
 // Directory to save the backup files
-const BACKUP_DIR = path.join(__dirname, "backups");
+const BACKUP_DIR = path.join(__dirname);
+
 
 // Function to run the backup
-function backupDatabase() {
-  const date = new Date().toISOString().split("T")[0]; // Get current date in YYYY-MM-DD format
-  const backupFileName = `${DB_NAME}-backup-${date}.gz`;
+async function backupDatabase() {
+  console.log(__dirname, "Starting backup process...");
+
+  const backupFileName = `${DB_NAME}-backup.gz`;
   const backupFilePath = path.join(BACKUP_DIR, backupFileName);
 
-  console.log('DB_URI:', DB_URI);  // Check if DB_URI is loaded correctly
-  console.log('DB_NAME:', DB_NAME); // Check if DB_NAME is loaded correctly
-
-  // Command to run the backup using mongodump
   const command = `mongodump --uri="${DB_URI}" --db=${DB_NAME} --archive=${backupFilePath} --gzip`;
+  console.log("Executing command:", command);
 
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Backup failed: ${error.message}`);
-      return;
-    }
+  try {
+    const result = await execCommand(command);
     console.log(`Backup successful: ${backupFilePath}`);
+    console.log("Command output:", result);
+  } catch (error) {
+    console.error("Backup failed:", error.message);
+    throw error;
+  }
+}
 
-    // Cleanup old backups (keep only the last 3)
-    cleanupBackups();
+// Modernized helper function to execute commands
+function execCommand(command) {
+  return new Promise((resolve) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Error during execution:", error.message);
+        resolve({ success: false, output: error.message }); // Mark as failure but don't reject
+        return;
+      }
+      if (stderr) {
+        console.warn("Command warnings:", stderr); // Log warnings
+      }
+      resolve({ success: true, output: stdout }); // Always resolve, whether warnings exist or not
+    });
   });
 }
 
@@ -98,3 +113,4 @@ function stopJob() {
 // Example usage
 // startJob(); 
 // stopJob();  // Call stopJob() to stop the job when necessary
+module.exports = {backupDatabase};

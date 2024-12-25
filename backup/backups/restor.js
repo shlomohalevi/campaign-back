@@ -1,17 +1,26 @@
 const { exec } = require("child_process");
 const path = require("path");
+const fs = require("fs");
+require('dotenv').config(); // Load environment variables
+
 
 // MongoDB connection details
-// const DB_URI = process.env.DB_URI; // MongoDB URI
-const DB_URI = 'mongodb://localhost:27017'
-const DB_NAME = 'campain'// The database name to restore
-const BACKUP_DIR = path.join(__dirname, "backups"); // Directory where backups are stored
+const DB_URI = process.env.DB_URI;
+const DB_NAME = process.env.DB_NAME;
+const BACKUP_DIR = __dirname;  // Directory where backups are stored
 
 // Backup file to restore
-const BACKUP_FILE = path.join(BACKUP_DIR, "Campain-backup-2024-11-10.gz"); // Path to your backup file
+const BACKUP_FILE = path.join(BACKUP_DIR, `${DB_NAME}-backup.gz`);  // Path to your backup file
 
 // Function to run the restore
 function restoreDatabase() {
+  // Check if the backup file exists
+  if (!fs.existsSync(BACKUP_FILE)) {
+    console.error(`Backup file does not exist: ${BACKUP_FILE}`);
+    return;
+  }
+
+
   // Command to restore the backup using mongorestore
   const command = `mongorestore --uri="${DB_URI}" --archive="${BACKUP_FILE}" --gzip --drop`;
 
@@ -22,11 +31,13 @@ function restoreDatabase() {
     }
     if (stderr) {
       console.error(`stderr: ${stderr}`);
-      return;
     }
     console.log(`Restore successful: ${stdout}`);
   });
 }
+
+// Call the function to restore the database
+restoreDatabase();
 
 // Run the restore function
 // restoreDatabase();

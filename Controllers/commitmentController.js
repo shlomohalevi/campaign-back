@@ -5,6 +5,8 @@ const paymentModel = require("../models/paymentModel");
 const People = require("../models/peopleModel");
 const pettyCash = require("../models/pettyCashModel");
 const AppError = require("../utils/AppError");
+const { backupDatabase } = require("../backup/backups/backup");
+
 
 
 const {
@@ -182,7 +184,7 @@ exports.reviewCommitments = asyncHandler(async (req, res, next) => {
     if (seenCommitments.has(uniqueKey)) {
       invalidCommitments.push({
         ...commitment,
-        reason: "התחייבות כפולה עם אותו אנש ואותו שם קמפיין",
+        reason: " התחייבות כפולה עם אותו אנש ואותו שם קמפיין באותה העלאה",
       });
       continue;
     }
@@ -292,12 +294,21 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
 
 
 exports.uploadCommitments = asyncHandler(async (req, res, next) => {
+  try{
+
+    console.log(backupDatabase)
+    await backupDatabase();
+  }catch(error){
+    console.log(error);
+    return next(new AppError(500,error));
+  }
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
     const commitments = Array.isArray(req.body) ? req.body : [req.body];
+
 
     // Insert commitments within the transaction
     const uploadedCommitments = await commitmentsModel.insertMany(commitments, { session });
@@ -737,8 +748,8 @@ exports.getCampainIncomSummeryByPaymentMethod = asyncHandler(async (req, res, ne
     }
   }
   const campainQuery = campain ? { CampainName: campainName } : {}
-  const commitments = await commitmentsModel
-    .find(campainQuery) // If campainName is undefined, find all
+  // const commitments = await commitmentsModel
+  //   .find(campainQuery) // If campainName is undefined, find all
   const payments = await paymentModel.find(campainQuery);
 
   const incomsByPaymentsMethods = {}
