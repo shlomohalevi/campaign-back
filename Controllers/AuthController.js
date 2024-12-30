@@ -57,13 +57,17 @@ exports.register = asyncHandler(async (req, res, next) => {
 
 exports.login = asyncHandler(async (req, res, next) => {
     console.log(req.body);
+    
     const { username, password } = req.body;
     // console.log(typeof password);
     if (!username || !password) {
         return next(new AppError(400, 'Please provide username and password'));
     }
+    const u = await managerModel.find({ Username: username });
+    console.log(u);
 
     const user = await managerModel.findOne({ Username: username });
+    console.log(user);
     // const h = await bcrypt.hash(password, 10);
 
 
@@ -276,6 +280,8 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
 
 exports.updateManagerDetails = asyncHandler(async (req, res, next) => {
+    // console.log(req.body);
+    // return next(new AppError('משתמש מערכת לא נמצא', 404))
     const manager = await managerModel.findById(req.body._id);
 
 
