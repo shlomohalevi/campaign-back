@@ -1,5 +1,5 @@
 const normalizeQueryParams = (req, res, next) => {
-    // If there are no query parameters, skip further execution
+    
     if (!Object.keys(req.query).length) {
       return next();
     }

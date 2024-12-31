@@ -3,6 +3,7 @@ const commitmentController = require('../Controllers/commitmentController')
 const authController = require('../Controllers/AuthController')
 const router = express.Router()
 const { normalizeQueryParams } = require('../utils/normalizeQueryParams');
+const { backupMiddleware } = require('../backup/backups/backup');
 
 router.route('/').get( authController.protect, commitmentController.getCommitment)
 router.route('/get-commitment/:_id').get( authController.protect, commitmentController.getCommitmentById)
@@ -10,7 +11,7 @@ router.route('/add-memorial-day').post( authController.protect,normalizeQueryPar
 router.route('/get-eligible-people/:campainName').get( authController.protect,normalizeQueryParams, commitmentController.GetEligblePeopleToMemmorialDay);
 router.route('/delete-memorial-day').delete( authController.protect,normalizeQueryParams, commitmentController.DeleteMemorialDay);
 router.route('/review-commitments').post( authController.protect, normalizeQueryParams, commitmentController.reviewCommitments);
-router.route('/upload-commitments').post( authController.protect,normalizeQueryParams, commitmentController.uploadCommitments);
+router.route('/upload-commitments').post( authController.protect,normalizeQueryParams, backupMiddleware, commitmentController.uploadCommitments);
 // router.route('/review-commitment-payments').post(  authController.protect,normalizeQueryParams, commitmentController.reviewCommitmentPayments);
 // router.route('/upload-commitment-payments').post( authController.protect,normalizeQueryParams, commitmentController.uploadPayments);
 router.route('/getCommitmentsByCampaign').get( authController.protect,normalizeQueryParams, commitmentController.getCommitmentsByCampaign)
@@ -22,6 +23,8 @@ router.route('/delete-commitment/:commitmentId').delete( authController.protect,
 // router.route('/get-payments-without-commitment').get( authController.protect,normalizeQueryParams, commitmentController.getPaymentsWithoutCommitment)
 // router.route('/transfer-payment').put( authController.protect,normalizeQueryParams, commitmentController.transferPayment)
 router.route('/get-campain-incom-by-payment-method/:campainName').get( normalizeQueryParams, commitmentController.getCampainIncomSummeryByPaymentMethod)
+router.route('/beckup-test').post( normalizeQueryParams, backupMiddleware);
+
 
 
 

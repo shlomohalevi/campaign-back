@@ -29,7 +29,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
     // Execute bulk write operation
     try {
       const result = await peopleModel.bulkWrite(bulkOps, { ordered: false });
-      console.log("BulkWrite Result:", result);
   
       // Check for write errors using `hasWriteErrors()` (MongoDB-specific errors)
       if (result.hasWriteErrors()) {
@@ -46,12 +45,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
       }
   
       // Log successful operation details
-      console.log(`
-          Inserted: ${result.nInserted || 0}, 
-          Matched: ${result.nMatched || 0}, 
-          Modified: ${result.nModified || 0}, 
-          Upserted: ${result.nUpserted || 0}
-      `);
   
       // Respond with success
       res.status(200).json({
@@ -179,10 +172,6 @@ function comparePersonData(existingPerson, uploadedPerson) {
   const uploadedConflicts = {};
   const existingConflicts = {};
   
-  if (uploadedPerson.AnashIdentifier == '5104')
-  {
-    console.log(existingPerson);
-  }
   
   for (const key of Object.keys(uploadedPerson)) {
       if ( key in existingPerson&& existingPerson[key] && existingPerson[key] != uploadedPerson[key]) {
@@ -355,7 +344,6 @@ exports.addPerson = asyncHandler(async (req, res, next) => {
 });
 
 exports.recoverUserActivity = asyncHandler(async (req, res, next) => {
-  console.log(req.params.AnashIdentifier);
   const AnashIdentifier = req.params.AnashIdentifier;
   const recoveredUser = await peopleModel.findOneAndUpdate(
     { AnashIdentifier: AnashIdentifier, isActive: false },

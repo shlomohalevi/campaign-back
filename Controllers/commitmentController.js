@@ -5,7 +5,7 @@ const paymentModel = require("../models/paymentModel");
 const People = require("../models/peopleModel");
 const pettyCash = require("../models/pettyCashModel");
 const AppError = require("../utils/AppError");
-const { backupDatabase } = require("../backup/backups/backup");
+// const { backupDatabase } = require("../backup/backups/backup");
 
 
 
@@ -294,14 +294,6 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
 
 
 exports.uploadCommitments = asyncHandler(async (req, res, next) => {
-  try{
-
-    console.log(backupDatabase)
-    await backupDatabase();
-  }catch(error){
-    console.log(error);
-    return next(new AppError(500,error));
-  }
   const session = await mongoose.startSession();
 
   try {
@@ -751,6 +743,7 @@ exports.getCampainIncomSummeryByPaymentMethod = asyncHandler(async (req, res, ne
   // const commitments = await commitmentsModel
   //   .find(campainQuery) // If campainName is undefined, find all
   const payments = await paymentModel.find(campainQuery);
+  const commitments = await commitmentsModel.find(campainQuery);
 
   const incomsByPaymentsMethods = {}
 
@@ -760,12 +753,17 @@ exports.getCampainIncomSummeryByPaymentMethod = asyncHandler(async (req, res, ne
     (incomsByPaymentsMethods[payment.PaymentMethod] || 0) + payment.Amount;
       
   }
+  const commitmentAmoutByPaymentMethod = commitments.reduce((acc, commitment) => {
+    acc[commitment.PaymentMethod] = (acc[commitment.PaymentMethod] || 0) + commitment.CommitmentAmount;
+    return acc;
+  }, {});
 
 
 
 
   res.status(200).json({
     status: "success",
-    incomsByPaymentsMethods
+    incomsByPaymentsMethods,
+    commitmentAmoutByPaymentMethod
   });
 });

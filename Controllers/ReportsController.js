@@ -62,9 +62,10 @@ exports.commitmentsReport = asyncHandler(async (req, res, next) => {
     
             if (previousCommitment) {
                 commitment[previousCampaignName +" "+ "סכום התחייבות"] = previousCommitment.CommitmentAmount;
-            } else {
-                commitment[previousCampaignName +" "+ "סכום התחייבות"] = 'אין התחייבות בקמפיין';
             }
+            // } else {
+            //     commitment[previousCampaignName +" "+ "סכום התחייבות"] = 'אין התחייבות בקמפיין';
+            // }
         });
     
         // Update commitment with person details
@@ -236,9 +237,10 @@ exports.campainReport = asyncHandler(async (req, res, next) => {
                     }
                 }
                 
-            } else {
-                person[previousCampaignName +" "+ "סכום התחייבות"] = 'אין התחייבות בקמפיין';
-            }
+            } 
+            // else {
+            //     person[previousCampaignName +" "+ "סכום התחייבות"] = 'אין התחייבות בקמפיין';
+            // }
         });
         if(latestCommitmentDate) 
         {
@@ -432,7 +434,7 @@ if (sortByField) {
     });
 } else {
     // If no sortByField is provided, just sort by LastName (default secondary sort)
-            updatedData[key].sort((a, b) => {
+            updatedData.sort((a, b) => {
                 const valueA = a.LastName;
                 const valueB = b.LastName;
     
@@ -549,7 +551,7 @@ if (sortByField) {
     });
 } else {
     // If no sortByField is provided, just sort by LastName (default secondary sort)
-            updatedData[key].sort((a, b) => {
+            updatedData.sort((a, b) => {
                 const valueA = a.LastName;
                 const valueB = b.LastName;
     
