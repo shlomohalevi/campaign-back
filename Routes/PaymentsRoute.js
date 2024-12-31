@@ -3,10 +3,12 @@ const paymentController = require('../Controllers/PaymentsController')
 const authController = require('../Controllers/AuthController')
 const router = express.Router()
 const { normalizeQueryParams } = require('../utils/normalizeQueryParams');
+const { backupMiddleware } = require('../backup/backups/backup');
+
 
 
 router.route('/review-commitment-payments').post(  authController.protect,normalizeQueryParams, paymentController.reviewCommitmentPayments);
-router.route('/upload-commitment-payments').post( authController.protect,normalizeQueryParams, paymentController.uploadPayments);
+router.route('/upload-commitment-payments').post( authController.protect,normalizeQueryParams,backupMiddleware, paymentController.uploadPayments);
 router.route('/upload-commitment-payment').post( authController.protect,normalizeQueryParams, paymentController.uploadCommitmentPayment);
 router.route('/delete-payment/:paymentId').delete( authController.protect,authController.restrictTo(['Admin', 'User']),
  paymentController.deletePayment)
