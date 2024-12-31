@@ -1,11 +1,11 @@
 
 require('dotenv').config(); // Load environment variables
+const AppError = require("../../utils/AppError");
 
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const cron = require('node-cron');
-const { console } = require('inspector');
 
 // MongoDB connection details
 const DB_URI = process.env.DB_URI;
@@ -16,33 +16,43 @@ const BACKUP_DIR = path.join(__dirname);
 
 
 // Function to run the backup
-async function backupDatabase() {
+const backupMiddleware = async (req, res, next) => {
+
+  // console.error("START OF MIDDLEWARE");
+  // console.error("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+  // return next(new AppError(500, "גיבוי נכשל"));
   console.log(__dirname, "Starting backup process...");
 
   const backupFileName = `${DB_NAME}-backup.gz`;
   const backupFilePath = path.join(BACKUP_DIR, backupFileName);
 
   const command = `mongodump --uri="${DB_URI}" --db=${DB_NAME} --archive=${backupFilePath} --gzip`;
+  // const command = `mongodump --uri="${'mongodb+srv://shlomvoda:shloo22@avoda.cnqjtah.mongodb.net/Campain_dev?retryWrites=true&w=majority&appName=avoda'}" --db=${DB_NAME} --archive=${backupFilePath} --gzip`;
   console.log("Executing command:", command);
 
   try {
     const result = await execCommand(command);
-    console.log(`Backup successful: ${backupFilePath}`);
-    console.log("Command output:", result);
+    if(!result.success){
+      return next(new AppError(500, "גיבוי נכשל"));
+    }
+    next();
+  
+
   } catch (error) {
     console.error("Backup failed:", error.message);
-    throw error;
+    return next(new AppError(500, "גיבוי נכשל"));
+
+  
   }
-}
+};
 
 // Modernized helper function to execute commands
 function execCommand(command) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error("Error during execution:", error.message);
-        resolve({ success: false, output: error.message }); // Mark as failure but don't reject
-        return;
+       reject(error);
       }
       if (stderr) {
         console.warn("Command warnings:", stderr); // Log warnings
@@ -113,4 +123,6 @@ function stopJob() {
 // Example usage
 // startJob(); 
 // stopJob();  // Call stopJob() to stop the job when necessary
-module.exports = {backupDatabase};
+module.exports = {
+  backupMiddleware,
+};

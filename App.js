@@ -79,7 +79,7 @@ const connectDB = async (url)=>{
 
   
 }
-connectDB(process.env.DB)
+connectDB(process.env.DB_URI)
 .then(()=>{
   console.log("The data base has been connected");
 })
