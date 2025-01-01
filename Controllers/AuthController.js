@@ -56,6 +56,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 
 
 exports.login = asyncHandler(async (req, res, next) => {
+    console.log(req.body);
     
     const { username, password } = req.body;
     // console.log(typeof password);
@@ -65,11 +66,13 @@ exports.login = asyncHandler(async (req, res, next) => {
 
     const user = await managerModel.findOne({ Username: username });
     // const h = await bcrypt.hash(password, 10);
+    console.log(user);
 
 
     if (!user || !(await bcrypt.compare(password, user.Password))) {
         return next(new AppError(401, 'Incorrect username or password'));
     }
+    console.log('ee');
     const token = generateToken(user._id, user.Username, '3d');
 
     // Set the token as an HTTP-only cookie
