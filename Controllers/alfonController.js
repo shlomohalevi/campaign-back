@@ -78,6 +78,7 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 
 exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const reviewedPeople = req.body;
+  console.log(reviewedPeople);
   const validPeople = [];
   const invalidPeople = [];
   const conflictedPeople = [];
@@ -353,6 +354,7 @@ exports.recoverUserActivity = asyncHandler(async (req, res, next) => {
   if (!recoveredUser) {
     return next(new AppError(404,'משתמש לא נמצא'));
   }
+  console.log('yess');
   res.status(200).json({
     status: "success",
     data: {
