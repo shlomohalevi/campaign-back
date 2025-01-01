@@ -78,6 +78,7 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 
 exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const reviewedPeople = req.body;
+  console.log(specificPerson);
   const validPeople = [];
   const invalidPeople = [];
   const conflictedPeople = [];
