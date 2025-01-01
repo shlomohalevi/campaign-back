@@ -78,7 +78,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 
 exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const reviewedPeople = req.body;
-  console.log(reviewedPeople);
   const validPeople = [];
   const invalidPeople = [];
   const conflictedPeople = [];
@@ -91,6 +90,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const existingDBPersonIdsMap = new Map(
     dbPeople.filter((person) => person.PersonID).map((person) => [String(person.PersonID), person]) // Normalize PersonID to string
   );
+  console.log('1')
 
   // Process and filter people
   for (const person of reviewedPeople) {
@@ -119,6 +119,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       }
       personIdMap.set(personIdAsString, person);
     }
+    console.log('2')
 
     // Check if the uploaded person is a duplicate by AnashIdentifier
     if (anashMap.has(person.AnashIdentifier)) {
@@ -144,6 +145,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       } 
       continue;
     }
+    console.log('3')
 
     // If person doesn't exist in the database, check for AnashIdentifier conflict
     if (existingDBPerson) {
@@ -164,6 +166,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       validPeople.push(person); // No existing match, valid person
     }
   }
+  console.log('4')
   // Return feedback
   res.status(200).json({ validPeople, invalidPeople, conflictedPeople });
 });
