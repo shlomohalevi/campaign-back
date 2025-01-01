@@ -78,9 +78,6 @@ exports.uploadPeople = asyncHandler(async (req, res, next) => {
 
 exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const reviewedPeople = req.body;
-  const specificPerson = reviewedPeople.find(
-    (person) => person.AnashIdentifier == '5101'
-  )
   console.log(specificPerson);
   const validPeople = [];
   const invalidPeople = [];
