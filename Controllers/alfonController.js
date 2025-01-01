@@ -90,7 +90,6 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
   const existingDBPersonIdsMap = new Map(
     dbPeople.filter((person) => person.PersonID).map((person) => [String(person.PersonID), person]) // Normalize PersonID to string
   );
-  console.log('1')
 
   // Process and filter people
   for (const person of reviewedPeople) {
@@ -119,7 +118,7 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       }
       personIdMap.set(personIdAsString, person);
     }
-    console.log('2')
+
 
     // Check if the uploaded person is a duplicate by AnashIdentifier
     if (anashMap.has(person.AnashIdentifier)) {
@@ -134,7 +133,6 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
     // Check if the person exists in the database
     const existingDBPerson = existingDBPeopleMap.get(person.AnashIdentifier);
     const existingDBPersonId = existingDBPersonIdsMap.get(String(person.PersonID)); // Normalize PersonID to string
-
     if (existingDBPersonId) {
       // If the existing person has a different AnashIdentifier, it's an error
       if (existingDBPersonId.AnashIdentifier != person.AnashIdentifier) {
@@ -142,10 +140,9 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
           ...person,
           reason: "הועלה מידע עם מספר זהות שכבר קיים במערכת, אבל מזהה אנש שונה",
         });
+        continue;
       } 
-      continue;
     }
-    console.log('3')
 
     // If person doesn't exist in the database, check for AnashIdentifier conflict
     if (existingDBPerson) {
@@ -166,7 +163,6 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       validPeople.push(person); // No existing match, valid person
     }
   }
-  console.log('4')
   // Return feedback
   res.status(200).json({ validPeople, invalidPeople, conflictedPeople });
 });
