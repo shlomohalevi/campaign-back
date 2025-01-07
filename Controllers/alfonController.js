@@ -97,12 +97,6 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
       invalidPeople.push({ ...person, reason: "מזהה אנש לא סופק" });
       continue;
     }
-    if(!person.FirstName || !person.LastName) 
-    {
-      invalidPeople.push({ ...person, reason: "שם פרטי או שם משפחה לא סופקו" });
-      continue;
-
-    }
 
     person.AnashIdentifier = String(person.AnashIdentifier);
 
@@ -160,6 +154,14 @@ exports.reviewUploadedPeople = asyncHandler(async (req, res, next) => {
         validPeople.push(person); // No conflict, valid person
       }
     } else {
+
+      if(!person.FirstName || !person.LastName) 
+        {
+          invalidPeople.push({ ...person, reason: "שם פרטי או שם משפחה לא סופקו" });
+          continue;
+    
+        }
+    
       validPeople.push(person); // No existing match, valid person
     }
   }
