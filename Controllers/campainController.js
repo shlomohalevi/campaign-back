@@ -315,7 +315,7 @@ exports.getAllMemorialDates = asyncHandler(async (req, res, next) => {
 });
 
 exports.editCampainDetails = asyncHandler(async (req, res, next) => {
-    console.log(req.body);
+    // console.log(req.body);
     const { startDate, endDate, CampainName,hebrewStartDate,hebrewEndDate } = req.body.updatedCampain;
     const memorialDaysToDelete = req.body.deletedMemorialDays;
     const campaignId = req.params.campainId;
