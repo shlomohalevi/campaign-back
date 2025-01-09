@@ -48,6 +48,10 @@ const commitmentSchema = new mongoose.Schema({
     type: String
     // required: [true, 'Fundraiser is required']
   },
+  ReceivedGift: {
+    type: String,
+    
+  },
   PaymentMethod: {
     type: String,
     enum:  ['מזומן', 'שיקים','העברה בנקאית',

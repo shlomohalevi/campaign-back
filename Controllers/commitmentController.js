@@ -295,6 +295,7 @@ exports.updateCommitmentDetails = asyncHandler(async (req, res, next) => {
 
 exports.uploadCommitments = asyncHandler(async (req, res, next) => {
   const session = await mongoose.startSession();
+  // console.log('eee')
 
   try {
     session.startTransaction();
@@ -366,6 +367,7 @@ exports.uploadCommitments = asyncHandler(async (req, res, next) => {
       uploadedCommitments,
     });
   } catch (error) {
+    // console.log(error,'error')
     // Roll back the transaction in case of error
     await session.abortTransaction();
     session.endSession();
@@ -405,8 +407,6 @@ exports.reviewCommitmentPayments = async (req, res, next) => {
 
 exports.getCommitmentsByCampaign = asyncHandler(async (req, res, next) => {
   const { campainName, isActive } = req.query;
-  console.log(req.query);
-  console.log(campainName, isActive);
 
   // Step 1: Build filters for campaign and isActive
   const campainFilter = campainName ? { CampainName: campainName } : {};
@@ -476,7 +476,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
 
   try {
     session.startTransaction();
-    console.log('3');
 
 
     const commitmentId = req.params.commitmentId;
@@ -498,7 +497,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     if (!deletedCommitment) {
       throw new AppError(400, "התחייבות לא נמצאה");
     }
-    console.log('4');
 
     // Delete payments related to the commitment
     const deletedPayments = await paymentModel
@@ -509,7 +507,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     const user = await People.findOne({
       AnashIdentifier: deletedCommitment.AnashIdentifier,
     }).session(session);
-    console.log('5');
 
 
     if (user) {
@@ -521,7 +518,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
         Data: deletedCommitment,
         Desc: `מחיקת התחייבות מקמפיין ${deletedCommitment.CampainName} סך ההתחייבות בגובה ${deletedCommitment.CommitmentAmount} ש"ח`,
       });
-      console.log('6');
 
 
       // Save operation record to user
@@ -532,7 +528,6 @@ exports.deleteCommitment = asyncHandler(async (req, res, next) => {
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
-    console.log('7');
 
     // Respond with success
     res.status(200).json({
