@@ -3,7 +3,7 @@ The project is a private system for managing campaigns and donations for a speci
 file uploads, donation tracking,reports and more.\
 system highlight here: https://shorturl.at/QWYnU\
 
-# Libraries and Tools Used\
+# Libraries and Tools Used
 
 react\
 react calendar component\
