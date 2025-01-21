@@ -7,7 +7,6 @@ https://shorturl.at/QWYnU
 # Libraries and Tools Used
 
 react\
-react calendar component\
 Node.js\
 Express\
 Nodemailer\
