@@ -68,6 +68,7 @@ app.use(globalErrorHandler)
 
 
 const connectDB = async (url)=>{
+  console.log(url);
   try{
     await mongoose.connect(url);
     console.log(`Connected to database: ${mongoose.connection.name}`);

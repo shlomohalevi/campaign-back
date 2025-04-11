@@ -16,6 +16,7 @@ const generateToken = (id, username, expiresIn) => {
 
 exports.register = asyncHandler(async (req, res, next) => {
     const { username, password, role, email, fullName } = req.body;
+    // console.log(req.body);
 
     if (!username || !password) {
         return next(new AppError(400, 'Please provide username and password'));
@@ -34,6 +35,7 @@ exports.register = asyncHandler(async (req, res, next) => {
         FullName: fullName
 
     });
+    console.log(user);
 
     if (!user) {
         return next(new AppError(400, 'Please provide email and password'));
