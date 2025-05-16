@@ -52,10 +52,11 @@ exports.register = asyncHandler(async (req, res, next) => {
         status: 'success',
         message: 'Token set in cookie',
         user: {
-        id: user._id,
-        username: user.Username,
-        role: user.Role,
-        email: user.Email
+         id: user._id,
+        Username: user.Username,
+        Role: user.Role,
+        Email: user.Email,
+        FullName: user.FullName
         }
 
     });
@@ -85,15 +86,18 @@ exports.login = asyncHandler(async (req, res, next) => {
     sameSite: 'Strict',
     maxAge: 1000 * 60 * 60 * 24 // 1 day
   });
+  //production
 
   res.status(200).json({
     status: 'success',
     message: 'Logged in successfully',
     user: {
       id: user._id,
-      username: user.Username,
-      role: user.Role,
-      email: user.Email
+      Username: user.Username,
+      Role: user.Role,
+      Email: user.Email,
+    FullName: user.FullName
+
     }
   });
 });
