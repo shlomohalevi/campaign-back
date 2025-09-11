@@ -43,13 +43,13 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
-  app.all('*', (req, res) => {
-    //change
-    res.status(404).json({
-        status: 'fail',
-        message: 'The requested route is not exist on this server'
-    })
-})
+app.use((req, res) => {
+  res.status(404).json({
+    status: 'fail',
+    message: 'The requested route does not exist on this server',
+  });
+});
+
 app.use(globalErrorHandler)
 
 

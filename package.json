@@ -36,6 +36,6 @@
   },
   "overrides": {
     "form-data": "4.0.4",
-    "path-to-regexp": "0.1.12"
+    "express": {}
   }
 }
