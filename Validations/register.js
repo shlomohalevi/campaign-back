@@ -48,3 +48,5 @@ const registerSchema = Joi.object({
       'any.required': 'חובה להזין שם מלא'
     })
 });
+
+module.exports = registerSchema;

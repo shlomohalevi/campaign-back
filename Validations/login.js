@@ -20,3 +20,5 @@ const loginSchema = Joi.object({
       'any.required': 'חובה להזין סיסמה'
     })
 });
+
+module.exports = loginSchema;
