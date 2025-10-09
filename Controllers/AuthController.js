@@ -5,6 +5,8 @@ const managerModel = require('../models/managersModel')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer');
+const registerSchema = require('../Validations/register')
+const loginSchema = require('../Validations/login')
 
 const generateToken = (id, username, expiresIn) => {
     return jwt.sign({ id, username }, process.env.JWT_SECRET, {
@@ -15,15 +17,18 @@ const generateToken = (id, username, expiresIn) => {
 
 
 exports.register = asyncHandler(async (req, res, next) => {
-    const { username, password, role, email, fullName } = req.body;
-    // console.log(req.body);
+const { error, value } = registerSchema.validate(req.body);
 
-    if (!username || !password) {
-        return next(new AppError(400, 'Please provide username and password'));
-    }
+if (error) {
+  return next(new AppError(400, error.details[0].message));
+}
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+// Safe destructuring AFTER validation
+const { username, password, role, email, fullName } = value;
+
+// Now hash + save
+const salt = await bcrypt.genSalt(10);
+const hashedPassword = await bcrypt.hash(password, salt);
 
 
 
@@ -38,7 +43,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     console.log(user);
 
     if (!user) {
-        return next(new AppError(400, 'Please provide email and password'));
+        return next(new AppError(400, 'שגיאה ביצירת משתמש'));
     }
     const token = generateToken(user._id, user.Username, '1d');
 
@@ -65,42 +70,44 @@ exports.register = asyncHandler(async (req, res, next) => {
 
 
 exports.login = asyncHandler(async (req, res, next) => {
-  const { username, password } = req.body;
+    const { error, value } = loginSchema.validate(req.body);
 
-  if (!username || !password) {
-    return next(new AppError(400, 'Please provide username and password'));
-  }
-
-  const user = await managerModel.findOne({ Username: username });
-
-  if (!user || !(await bcrypt.compare(password, user.Password))) {
-    return next(new AppError(401, 'Incorrect username or password'));
-  }
-
-  const token = generateToken(user._id, user.Username, '1d');
-
-  // ✅ Set the HttpOnly cookie
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // only true in production
-    sameSite: 'Strict',
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
-  });
-  //production
-
-  res.status(200).json({
-    status: 'success',
-    message: 'Logged in successfully',
-    user: {
-      id: user._id,
-      Username: user.Username,
-      Role: user.Role,
-      Email: user.Email,
-    FullName: user.FullName
-
+    if (error) {
+    return next(new AppError(400, error.details[0].message));
     }
-  });
-});
+
+    const { username, password } = value; 
+
+    const user = await managerModel.findOne({ Username: username });
+
+    if (!user || !(await bcrypt.compare(password, user.Password))) {
+        return next(new AppError(401, 'Incorrect username or password'));
+    }
+
+    const token = generateToken(user._id, user.Username, '1d');
+
+    // ✅ Set the HttpOnly cookie
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // only true in production
+        sameSite: 'Strict',
+        maxAge: 1000 * 60 * 60 * 24 // 1 day
+    });
+    //production
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Logged in successfully',
+        user: {
+        id: user._id,
+        Username: user.Username,
+        Role: user.Role,
+        Email: user.Email,
+        FullName: user.FullName
+
+        }
+    });
+    });
 
 exports.logout = asyncHandler(async (req, res, next) => {
   // Clear the 'token' cookie
@@ -218,7 +225,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
 
     const user = await managerModel.findOne({ Username: username, Email: email });
     if (!user) {
-        return next(new AppError('There is no user with that username.', 404));
+        return next(new AppError('שגיאה באימייל או שם משתמש.', 404));
     }
 
     const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
