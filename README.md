@@ -6,6 +6,7 @@ https://www.linkedin.com/feed/update/urn:li:activity:7282481343832215553/
 # Libraries and Tools Used
 
 react\
+joi\
 Node.js\
 Express\
 Nodemailer\
