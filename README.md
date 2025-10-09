@@ -9,6 +9,7 @@ react\
 Node.js\
 Express\
 Nodemailer\
+joi\
 ag-grid\
 excel-js\
 excelpdf\
